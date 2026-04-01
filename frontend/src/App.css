@@ -1,0 +1,134 @@
+:root {
+  --bg-color: #0f172a;
+  --card-bg: #1e293b;
+  --text-main: #f8fafc;
+  --text-dim: #94a3b8;
+  --primary: #38bdf8;
+  --primary-hover: #0ea5e9;
+  --error: #fb7185;
+  --success: #4ade80;
+}
+
+body {
+  margin: 0;
+  font-family: "Inter", system-ui, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.container {
+  background-color: var(--card-bg);
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  max-width: 450px;
+  text-align: center;
+}
+
+h1 {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+button {
+  background-color: var(--primary);
+  color: #000;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  font-size: 1rem;
+}
+
+button:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.status-box {
+  margin-top: 1.5rem;
+  text-align: left;
+  background: #000;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  font-family: "Fira Code", monospace;
+  font-size: 0.85rem;
+  color: var(--success);
+  border: 1px solid #334155;
+  overflow-x: auto;
+}
+
+.error-msg {
+  color: var(--error);
+  background: rgba(251, 113, 133, 0.1);
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+.loading {
+  color: var(--text-dim);
+  margin-top: 1rem;
+  font-style: italic;
+}
+
+.status-grid {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.health-card {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1rem;
+  border-radius: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #334155;
+}
+
+.health-label {
+  text-transform: capitalize;
+  font-weight: 500;
+  color: var(--text-dim);
+}
+
+.health-value {
+  font-weight: 700;
+  padding: 0.25rem 0.75rem;
+  border-radius: 2rem;
+  font-size: 0.85rem;
+}
+
+/* Colores dinámicos para los estados */
+.status-up {
+  background: rgba(74, 222, 128, 0.2);
+  color: #4ade80;
+}
+
+.status-down {
+  background: rgba(251, 113, 133, 0.2);
+  color: #fb7185;
+}
+
+.status-default {
+  background: rgba(148, 163, 184, 0.2);
+  color: var(--text-dim);
+}
