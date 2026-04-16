@@ -2,7 +2,7 @@ services:
   db:
     image: mysql:8
     container_name: mysql-backend
-    restart: always
+    restart: no
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: backend
