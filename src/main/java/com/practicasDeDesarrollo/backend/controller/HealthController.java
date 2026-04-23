@@ -1,6 +1,6 @@
 package com.practicasDeDesarrollo.backend.controller;
 
-import com.practicasDeDesarrollo.backend.dto.HealthStatus;
+import com.practicasDeDesarrollo.backend.dto.response.HealthStatusResponse;
 import com.practicasDeDesarrollo.backend.service.HealthService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,8 +18,8 @@ public class HealthController {
     }
 
     @GetMapping
-    public ResponseEntity<HealthStatus> health() {
-        HealthStatus status = healthService.checkHealth();
+    public ResponseEntity<HealthStatusResponse> health() {
+        HealthStatusResponse status = healthService.checkHealth();
 
         if ("UP".equals(status.status())) {
             return ResponseEntity.ok(status);

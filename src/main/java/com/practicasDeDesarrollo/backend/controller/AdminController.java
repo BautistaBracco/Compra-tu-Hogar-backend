@@ -1,7 +1,8 @@
 package com.practicasDeDesarrollo.backend.controller;
 
 
-import com.practicasDeDesarrollo.backend.dto.CreateUsuarioRequest;
+import com.practicasDeDesarrollo.backend.dto.request.CreateUsuarioRequest;
+import com.practicasDeDesarrollo.backend.dto.response.AuthResponse;
 import com.practicasDeDesarrollo.backend.entity.Usuario;
 import com.practicasDeDesarrollo.backend.entity.enums.RolUsuario;
 import com.practicasDeDesarrollo.backend.service.UsuarioService;
@@ -26,7 +27,7 @@ public class AdminController {
     }
 
     @PostMapping("/inmobiliaria")
-    public ResponseEntity<Usuario> registrarInmobiliaria(@Valid @RequestBody CreateUsuarioRequest request) {
+    public ResponseEntity<AuthResponse> registrarInmobiliaria(@Valid @RequestBody CreateUsuarioRequest request) {
         // Forzamos que el rol sea INMOBILIARIA
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(usuarioService.createUsuario(request, RolUsuario.INMOBILIARIA));

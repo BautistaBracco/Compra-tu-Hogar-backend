@@ -1,12 +1,12 @@
-package com.practicasDeDesarrollo.backend.dto;
+package com.practicasDeDesarrollo.backend.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
 public record CreateUsuarioRequest(
-        @NotBlank String nombre,
+        @NotBlank String name,
         @Email @NotBlank String email,
         @NotBlank String password,
-        String icono
+        String icon
 ) {
 }
