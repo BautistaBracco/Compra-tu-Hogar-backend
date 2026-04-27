@@ -1,12 +1,11 @@
 package com.practicasDeDesarrollo.backend.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.practicasDeDesarrollo.backend.entity.enums.RolUsuario;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,12 +16,13 @@ import java.util.List;
 import java.util.Set;
 
 @Getter
-@Builder(toBuilder = true)
+@Setter
+@SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
 @Table(name = "usuarios")
-public class Usuario implements UserDetails {
+public class Usuario extends Auditable implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,15 +32,16 @@ public class Usuario implements UserDetails {
     private String nombre;
 
     @Email
-    @Column(unique = true)
+    @Column(unique = true, nullable = false)
     private String email;
 
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @NotBlank
     private String password;
 
     private String icono;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private RolUsuario rol;
 
     @ManyToMany
@@ -49,10 +50,8 @@ public class Usuario implements UserDetails {
             joinColumns = @JoinColumn(name = "usuario_id"),
             inverseJoinColumns = @JoinColumn(name = "propiedad_id")
     )
-    @JsonIgnore
     @Builder.Default
     private Set<Propiedad> favoritos = new HashSet<>();
-
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -68,6 +67,4 @@ public class Usuario implements UserDetails {
     public String getPassword() {
         return password;
     }
-
-
 }

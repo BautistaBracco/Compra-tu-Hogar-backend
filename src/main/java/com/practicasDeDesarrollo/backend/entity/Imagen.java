@@ -1,22 +1,20 @@
 package com.practicasDeDesarrollo.backend.entity;
 
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Getter
+@Setter
 @Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "imagenes")
+@Table(name = "imagenes", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"publicacion_id", "orden"})
+})
 public class Imagen {
 
     @Id
@@ -29,11 +27,10 @@ public class Imagen {
 
     @NotNull
     @Positive
+    @Column(nullable = false)
     private Integer orden;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "publicacion_id", nullable = false)
-    @JsonIgnore
     private Publicacion publicacion;
-
 }

@@ -1,31 +1,21 @@
 package com.practicasDeDesarrollo.backend.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
+import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Getter
-@Builder(toBuilder = true)
+@Setter
+@SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
 @Table(name = "compras")
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-public class Compra {
+public class Compra extends Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,21 +23,16 @@ public class Compra {
 
     @NotNull
     @DecimalMin(value = "0.01")
-    @Column(nullable = false, precision = 12, scale = 2)
+    @Column(nullable = false, precision = 19, scale = 2) // Mejorada la precisión
     private BigDecimal precioCompra;
 
-
-    @CreatedDate
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime creadoEn;
-
     @NotNull
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "comprador_id", nullable = false)
     private Usuario comprador;
 
     @NotNull
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "publicacion_id", nullable = false, unique = true)
     private Publicacion publicacion;
 }

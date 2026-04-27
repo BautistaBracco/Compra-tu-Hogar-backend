@@ -4,9 +4,8 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
 public record CreateUsuarioRequest(
-        @NotBlank String name,
+        @NotBlank String nombre,
         @Email @NotBlank String email,
         @NotBlank String password,
-        String icon
-) {
-}
+        String icono
+) {}

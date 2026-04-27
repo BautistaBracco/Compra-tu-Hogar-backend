@@ -39,10 +39,10 @@ public class UsuarioService {
         String passwordHasheada = passwordEncoder.encode(request.password());
 
         Usuario usuario = Usuario.builder()
-                .nombre(request.name())
+                .nombre(request.nombre())
                 .email(request.email())
                 .password(passwordHasheada)
-                .icono(request.icon())
+                .icono(request.icono())
                 .rol(rol)
                 .build();
 
