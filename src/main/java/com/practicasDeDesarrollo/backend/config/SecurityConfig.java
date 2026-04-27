@@ -1,37 +1,57 @@
 package com.practicasDeDesarrollo.backend.config;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+    private final JwtAuthenticationFilter jwtAuthFilter;
+    private final AuthenticationProvider authenticationProvider;
+
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(cors -> {})
+                .cors(cors -> {
+                })
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/health", "/auth/**").permitAll()
+                        // 1. Endpoints totalmente públicos
+                        .requestMatchers("/health", "/auth/**", "/error").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/publicaciones/**", "/propiedades/**").permitAll()
 
+                        // 2. Endpoints restringidos por ROL (Tu estructura /rol/accion)
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/inmobiliaria/**").hasRole("INMOBILIARIA")
                         .requestMatchers("/comprador/**").hasRole("COMPRADOR")
 
+                        // 3. Protección de los recursos base (Solo para usuarios autenticados)
+                        // Esto evita que alguien use los endpoints de las entidades directamente
+                        .requestMatchers("/usuarios/**").hasAnyRole("ADMIN", "COMPRADOR", "INMOBILIARIA")
+                        .requestMatchers("/compras/**").authenticated() // O restringirlo según lógica
+                        .requestMatchers("/resenas/**").authenticated()
+
                         .anyRequest().authenticated()
-                );
+                )
+                .authenticationProvider(authenticationProvider)
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -49,4 +69,5 @@ public class SecurityConfig {
 
         return source;
     }
+
 }
