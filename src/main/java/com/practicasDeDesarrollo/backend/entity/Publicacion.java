@@ -1,6 +1,5 @@
 package com.practicasDeDesarrollo.backend.entity;
 
-import com.practicasDeDesarrollo.backend.entity.enums.EstadoPublicacion;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -34,8 +33,10 @@ public class Publicacion extends Auditable {
     @Column(nullable = false, length = 1200)
     private String descripcion;
 
-    @Enumerated(EnumType.STRING)
-    private EstadoPublicacion estado;
+    @NotNull
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean fueVendida = false;
 
     @NotNull
     @ManyToOne(optional = false, fetch = FetchType.LAZY) // Optimización

@@ -7,6 +7,5 @@ public record AuthResponse(
         String email,
         String icono,
         String rol
-
 ) {
 }
