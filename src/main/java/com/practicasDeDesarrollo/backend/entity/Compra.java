@@ -12,9 +12,11 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @Builder(toBuilder = true)
@@ -30,13 +32,14 @@ public class Compra {
     private Long id;
 
     @NotNull
-    @Column(nullable = false)
-    private LocalDate fecha;
-
-    @NotNull
     @DecimalMin(value = "0.01")
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal precioCompra;
+
+
+    @CreatedDate
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime creadoEn;
 
     @NotNull
     @ManyToOne(optional = false)

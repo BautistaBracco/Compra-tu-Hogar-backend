@@ -7,8 +7,11 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,6 +40,14 @@ public class Publicacion {
 
     @Enumerated(EnumType.STRING)
     private EstadoPublicacion estado;
+
+    @CreatedDate
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime creadoEn;
+
+    @LastModifiedDate
+    @Column(nullable = false)
+    private LocalDateTime actualizadoEn;
 
     @NotNull
     @ManyToOne(optional = false)
