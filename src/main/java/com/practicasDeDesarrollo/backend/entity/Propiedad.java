@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.*;
 
 import java.util.HashSet;
@@ -31,17 +33,35 @@ public class Propiedad {
     @Column(nullable = false)
     private String ubicacion;
 
-    @NotBlank
-    @Column(nullable = false, length = 1200)
-    private String descripcion;
+
+    @NotNull
+    @Positive
+    @Column(nullable = false)
+    private Integer superficie;
+
+    @NotNull
+    @Positive
+    @Column(nullable = false)
+    private Integer ambientes;
+
+    @NotNull
+    @PositiveOrZero
+    @Column(nullable = false)
+    private Integer sanitarios;
+
+    @NotNull
+    @PositiveOrZero
+    @Column(nullable = false)
+    private Integer expensas;
+
 
     @ManyToMany
     @JoinTable(
-            name = "favoritos",
+            name = "propiedad_caracteristica",
             joinColumns = @JoinColumn(name = "propiedad_id"),
-            inverseJoinColumns = @JoinColumn(name = "usuario_id") // Apunta a la tabla única de usuarios
+            inverseJoinColumns = @JoinColumn(name = "caracteristica_id")
     )
-    @JsonIgnore
     @Builder.Default
-    private Set<Usuario> favoritos = new HashSet<>();
+    private Set<Caracteristica> caracteristicas = new HashSet<>();
+
 }
