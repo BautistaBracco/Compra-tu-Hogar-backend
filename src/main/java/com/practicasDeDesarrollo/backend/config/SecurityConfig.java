@@ -41,19 +41,19 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         // 1. Endpoints totalmente públicos
-                        .requestMatchers("/health", "/auth/**", "/error").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/publicaciones/**", "/propiedades/**").permitAll()
+                        .requestMatchers("/health", "/api/v1/auth/**", "/auth/**", "/error").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/publicaciones/**", "/publicaciones/**", "/api/v1/propiedades/**", "/propiedades/**").permitAll()
 
                         // 2. Endpoints restringidos por ROL (Tu estructura /rol/accion)
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/inmobiliaria/**").hasRole("INMOBILIARIA")
-                        .requestMatchers("/comprador/**").hasRole("COMPRADOR")
+                        .requestMatchers("/api/v1/admin/**", "/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/inmobiliaria/**", "/inmobiliaria/**").hasRole("INMOBILIARIA")
+                        .requestMatchers("/api/v1/comprador/**", "/comprador/**").hasRole("COMPRADOR")
 
                         // 3. Protección de los recursos base (Solo para usuarios autenticados)
                         // Esto evita que alguien use los endpoints de las entidades directamente
-                        .requestMatchers("/usuarios/**").hasAnyRole("ADMIN", "COMPRADOR", "INMOBILIARIA")
-                        .requestMatchers("/compras/**").authenticated() // O restringirlo según lógica
-                        .requestMatchers("/resenas/**").authenticated()
+                        .requestMatchers("/api/v1/usuarios/**", "/usuarios/**").hasAnyRole("ADMIN", "COMPRADOR", "INMOBILIARIA")
+                        .requestMatchers("/api/v1/compras/**", "/compras/**").authenticated() // O restringirlo según lógica
+                        .requestMatchers("/api/v1/resenas/**", "/resenas/**").authenticated()
 
                         .anyRequest().authenticated()
                 )
