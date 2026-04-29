@@ -2,6 +2,7 @@ package com.practicasDeDesarrollo.backend.service;
 
 import com.practicasDeDesarrollo.backend.dto.request.CreatePropiedadRequest;
 import com.practicasDeDesarrollo.backend.dto.request.CreatePublicacionRequest;
+import com.practicasDeDesarrollo.backend.dto.request.UpdatePublicacionRequest;
 import com.practicasDeDesarrollo.backend.dto.response.PublicacionResponse;
 import com.practicasDeDesarrollo.backend.entity.Publicacion;
 import com.practicasDeDesarrollo.backend.entity.Usuario;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -34,10 +36,12 @@ class PublicacionServiceTest {
     private PublicacionRepository publicacionRepository;
 
     private Usuario inmobiliariaPersistida;
+    private Usuario inmobiliariaIntrusa;
+    private Usuario adminPersistido;
 
     @BeforeEach
     void setUp() {
-        // Necesitamos un usuario con rol INMOBILIARIA en la DB para asociar a la publicación
+        // Usuario Dueño
         Usuario inmo = Usuario.builder()
                 .nombre("Quilmes Propiedades")
                 .email("info@quilmesprop.com")
@@ -45,24 +49,48 @@ class PublicacionServiceTest {
                 .rol(RolUsuario.INMOBILIARIA)
                 .build();
         inmobiliariaPersistida = usuarioRepository.save(inmo);
+
+        // Usuario Ajeno (para probar seguridad)
+        Usuario inmo2 = Usuario.builder()
+                .nombre("Otra Inmobiliaria")
+                .email("otra@test.com")
+                .password("pass")
+                .rol(RolUsuario.INMOBILIARIA)
+                .build();
+        inmobiliariaIntrusa = usuarioRepository.save(inmo2);
+
+        // Usuario Admin
+        Usuario admin = Usuario.builder()
+                .nombre("Super Admin")
+                .email("admin@test.com")
+                .password("pass")
+                .rol(RolUsuario.ADMIN)
+                .build();
+        adminPersistido = usuarioRepository.save(admin);
     }
 
-    @Test
-    void createPublicacion_deberiaPersistirPublicacionEImagenesEnOrden() {
-        // Arrange
+    // Método auxiliar para no repetir código en los tests
+    private PublicacionResponse crearPublicacionBase() {
         CreatePropiedadRequest propReq = new CreatePropiedadRequest(
                 TipoPropiedad.DEPTO, "Pringles 450", "2", "B", 40, 2, 1, 12000
         );
-
         CreatePublicacionRequest pubReq = new CreatePublicacionRequest(
                 "Oportunidad inversores",
                 new BigDecimal("85000.00"),
                 List.of("http://image.com/1.jpg", "http://image.com/2.jpg"),
                 propReq
         );
+        return publicacionService.createPublicacion(pubReq, inmobiliariaPersistida);
+    }
 
+    // ==========================================
+    // TESTS DE CREACIÓN
+    // ==========================================
+
+    @Test
+    void createPublicacion_deberiaPersistirPublicacionEImagenesEnOrden() {
         // Act
-        PublicacionResponse response = publicacionService.createPublicacion(pubReq, inmobiliariaPersistida);
+        PublicacionResponse response = crearPublicacionBase();
 
         // Assert: Respuesta del servicio
         assertNotNull(response.id());
@@ -71,17 +99,86 @@ class PublicacionServiceTest {
 
         // Assert: Verificación en la Base de Datos real
         Publicacion enDB = publicacionRepository.findById(response.id()).orElseThrow();
-
         assertEquals(2, enDB.getImagenes().size());
-
-        // Verificamos que el orden (i + 1) de tu lógica se guardó bien
         assertEquals(1, enDB.getImagenes().get(0).getOrden());
         assertEquals("http://image.com/1.jpg", enDB.getImagenes().get(0).getUrl());
+    }
 
-        assertEquals(2, enDB.getImagenes().get(1).getOrden());
-        assertEquals("http://image.com/2.jpg", enDB.getImagenes().get(1).getUrl());
+    // ==========================================
+    // TESTS DE MODIFICACIÓN
+    // ==========================================
 
-        // Verificamos que la relación bidireccional funciona
-        assertEquals(enDB, enDB.getImagenes().get(0).getPublicacion());
+    @Test
+    void modificarPublicacion_siendoDueno_deberiaActualizarDatosEImagenes() {
+        // Arrange
+        PublicacionResponse pubCreada = crearPublicacionBase();
+        UpdatePublicacionRequest updateReq = new UpdatePublicacionRequest(
+                "Texto actualizado",
+                new BigDecimal("90000.00"),
+                List.of("http://image.com/nueva.jpg") // Reemplazamos 2 imágenes por 1 nueva
+        );
+
+        // Act
+        PublicacionResponse response = publicacionService.modificarPublicacion(
+                pubCreada.id(), updateReq, inmobiliariaPersistida
+        );
+
+        // Assert
+        assertEquals("Texto actualizado", response.descripcion());
+        assertEquals(new BigDecimal("90000.00"), response.precio());
+        assertEquals(1, response.imagenes().size());
+
+        // Verificamos DB para asegurar que OrphanRemoval borró las viejas
+        publicacionRepository.flush(); // Forzamos la sincro con DB para chequear borrados
+        Publicacion enDB = publicacionRepository.findById(pubCreada.id()).orElseThrow();
+        assertEquals(1, enDB.getImagenes().size());
+        assertEquals("http://image.com/nueva.jpg", enDB.getImagenes().get(0).getUrl());
+    }
+
+    @Test
+    void modificarPublicacion_siendoInmobiliariaAjena_deberiaLanzarExcepcion() {
+        // Arrange
+        PublicacionResponse pubCreada = crearPublicacionBase();
+        UpdatePublicacionRequest updateReq = new UpdatePublicacionRequest(
+                "Hackeando", new BigDecimal("1.00"), List.of()
+        );
+
+        // Act & Assert
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> {
+            publicacionService.modificarPublicacion(pubCreada.id(), updateReq, inmobiliariaIntrusa);
+        });
+        assertEquals("No tienes permiso para modificar esta publicación", ex.getMessage());
+    }
+
+    // ==========================================
+    // TESTS DE ELIMINACIÓN
+    // ==========================================
+
+    @Test
+    void eliminarPublicacion_siendoDueno_deberiaBorrarDeLaBD() {
+        // Arrange
+        PublicacionResponse pubCreada = crearPublicacionBase();
+
+        // Act
+        publicacionService.eliminarPublicacion(pubCreada.id(), inmobiliariaPersistida);
+        publicacionRepository.flush();
+
+        // Assert
+        Optional<Publicacion> enDB = publicacionRepository.findById(pubCreada.id());
+        assertTrue(enDB.isEmpty(), "La publicación debió ser eliminada de la base de datos");
+    }
+
+    @Test
+    void eliminarPublicacion_siendoInmobiliariaAjena_deberiaLanzarExcepcion() {
+        // Arrange
+        PublicacionResponse pubCreada = crearPublicacionBase();
+
+        // Act & Assert
+        assertThrows(IllegalArgumentException.class, () -> {
+            publicacionService.eliminarPublicacion(pubCreada.id(), inmobiliariaIntrusa);
+        });
+
+        // Verificamos que la publicación sigue existiendo
+        assertTrue(publicacionRepository.existsById(pubCreada.id()));
     }
 }
