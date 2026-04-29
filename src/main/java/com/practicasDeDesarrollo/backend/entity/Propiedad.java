@@ -18,7 +18,12 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "propiedades")
+@Table(name = "propiedades", uniqueConstraints = {
+        @UniqueConstraint(
+                name = "uk_identidad_propiedad",
+                columnNames = {"ubicacion", "piso", "depto"}
+        )
+})
 public class Propiedad extends Auditable {
 
     @Id
@@ -53,6 +58,16 @@ public class Propiedad extends Auditable {
     @PositiveOrZero
     @Column(nullable = false)
     private Integer expensas;
+
+    @NotNull
+    @Column(length = 10)
+    @Builder.Default
+    private String piso = ""; // "4", "PB", "Mezzanine"
+
+    @NotNull
+    @Column(length = 10)
+    @Builder.Default
+    private String depto = ""; // "A", "4", "C-2"
 
     @ManyToMany
     @JoinTable(

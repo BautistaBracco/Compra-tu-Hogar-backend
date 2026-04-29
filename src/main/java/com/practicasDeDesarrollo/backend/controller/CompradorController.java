@@ -18,6 +18,7 @@ public class CompradorController {
     private final UsuarioService usuarioService;
 
     @PutMapping("/perfil/{id}")
+    // cambiar el tipo que retorna
     public ResponseEntity<Usuario> actualizarPerfil(
             @PathVariable Long id,
             @Valid @RequestBody UpdateUsuarioRequest request) {
