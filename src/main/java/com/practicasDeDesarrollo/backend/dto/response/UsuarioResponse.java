@@ -1,11 +1,10 @@
 package com.practicasDeDesarrollo.backend.dto.response;
 
-public record AuthResponse(
-        String token,
+public record UsuarioResponse(
         Long id,
         String nombre,
         String email,
-        String icono,
-        String rol
+        String icono
+
 ) {
 }

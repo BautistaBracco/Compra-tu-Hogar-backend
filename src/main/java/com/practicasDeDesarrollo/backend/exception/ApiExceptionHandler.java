@@ -1,45 +1,141 @@
 package com.practicasDeDesarrollo.backend.exception;
 
-import com.practicasDeDesarrollo.backend.dto.response.ApiErrorResponse;
+import com.practicasDeDesarrollo.backend.dto.response.ApiError;
+import com.practicasDeDesarrollo.backend.dto.response.ErrorCode;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.exc.InvalidFormatException;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
 
-    // 1. Centraliza errores de validación de formularios (@Valid)
+    // 🔹 Helper interno (evita crear otra clase)
+    private ApiError buildError(
+            HttpStatus status,
+            ErrorCode code,
+            String message,
+            String path,
+            Map<String, Object> details
+    ) {
+        return new ApiError(
+                Instant.now(),
+                status.value(),
+                status.getReasonPhrase(),
+                code.name(),
+                message,
+                path,
+                details
+        );
+    }
+
+    // 🔹 1. Validaciones (@Valid)
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        Map<String, String> detalles = new HashMap<>();
+    public ResponseEntity<ApiError> handleValidation(
+            MethodArgumentNotValidException ex,
+            HttpServletRequest request
+    ) {
+        Map<String, Object> details = new HashMap<>();
 
-        ex.getBindingResult().getAllErrors().forEach((error) -> {
-            String fieldName = ((FieldError) error).getField();
-            String errorMessage = error.getDefaultMessage();
-            detalles.put(fieldName, errorMessage);
-        });
+        ex.getBindingResult().getFieldErrors().forEach(err ->
+                details.put(err.getField(), err.getDefaultMessage())
+        );
 
-        ApiErrorResponse response = new ApiErrorResponse("Error en los datos enviados", detalles);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        ApiError error = buildError(
+                HttpStatus.BAD_REQUEST,
+                ErrorCode.VALIDATION_ERROR,
+                "Error en los datos enviados",
+                request.getRequestURI(),
+                details
+        );
+
+        return ResponseEntity.badRequest().body(error);
     }
 
-    // 2. Centraliza errores de lógica de negocio (tu throw new IllegalArgumentException)
+    // 🔹 2. JSON inválido / ENUM mal
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiError> handleJson(
+            HttpMessageNotReadableException ex,
+            HttpServletRequest request
+    ) {
+        Throwable cause = ex.getMostSpecificCause();
+
+        // Caso enum inválido
+        if (cause instanceof InvalidFormatException ife && ife.getTargetType().isEnum()) {
+
+            String campo = ife.getPath().stream()
+                    .map(JacksonException.Reference::getPropertyName)
+                    .collect(Collectors.joining("."));
+
+            Map<String, Object> details = new HashMap<>();
+            details.put("campo", campo);
+            details.put("valor", ife.getValue());
+            details.put("permitidos", ife.getTargetType().getEnumConstants());
+
+            ApiError error = buildError(
+                    HttpStatus.BAD_REQUEST,
+                    ErrorCode.INVALID_ENUM,
+                    "Valor inválido para enum",
+                    request.getRequestURI(),
+                    details
+            );
+
+            return ResponseEntity.badRequest().body(error);
+        }
+
+        // JSON mal formado genérico
+        ApiError error = buildError(
+                HttpStatus.BAD_REQUEST,
+                ErrorCode.JSON_MALFORMED,
+                "JSON mal formado",
+                request.getRequestURI(),
+                null
+        );
+
+        return ResponseEntity.badRequest().body(error);
+    }
+
+    // 🔹 3. Errores de negocio
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ApiErrorResponse> handleIllegalArgumentExceptions(IllegalArgumentException ex) {
-        ApiErrorResponse response = new ApiErrorResponse(ex.getMessage(), null);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    public ResponseEntity<ApiError> handleBusiness(
+            IllegalArgumentException ex,
+            HttpServletRequest request
+    ) {
+        ApiError error = buildError(
+                HttpStatus.BAD_REQUEST,
+                ErrorCode.BUSINESS_ERROR,
+                ex.getMessage(),
+                request.getRequestURI(),
+                null
+        );
+
+        return ResponseEntity.badRequest().body(error);
     }
 
-    // 3. Centraliza cualquier otro error inesperado (Error 500) para que no explote el backend
+    // 🔹 4. Fallback (500)
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiErrorResponse> handleGlobalExceptions(Exception ex) {
-        ApiErrorResponse response = new ApiErrorResponse("Ocurrió un error interno en el servidor", null);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    public ResponseEntity<ApiError> handleGlobal(
+            Exception ex,
+            HttpServletRequest request
+    ) {
+        ApiError error = buildError(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                ErrorCode.INTERNAL_ERROR,
+                "Error interno del servidor",
+                request.getRequestURI(),
+                null
+        );
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
 }

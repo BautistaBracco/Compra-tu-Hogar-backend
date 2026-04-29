@@ -3,11 +3,13 @@ package com.practicasDeDesarrollo.backend.service;
 import com.practicasDeDesarrollo.backend.dto.response.AuthResponse;
 import com.practicasDeDesarrollo.backend.dto.request.CreateUsuarioRequest;
 import com.practicasDeDesarrollo.backend.dto.request.UpdateUsuarioRequest;
+import com.practicasDeDesarrollo.backend.dto.response.UsuarioResponse;
 import com.practicasDeDesarrollo.backend.entity.Usuario;
 import com.practicasDeDesarrollo.backend.entity.enums.RolUsuario;
 import com.practicasDeDesarrollo.backend.repository.UsuarioRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -27,11 +29,7 @@ public class UsuarioService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
 
-    public List<Usuario> findAll() {
-        return usuarioRepository.findAll();
-    }
-
-    public AuthResponse createUsuario(CreateUsuarioRequest request, RolUsuario rol) {
+    public AuthResponse createUsuario(@NonNull CreateUsuarioRequest request, RolUsuario rol) {
         if (usuarioRepository.existsByEmail(request.email())) {
             throw new IllegalArgumentException("El email ya está en uso");
         }
@@ -39,10 +37,10 @@ public class UsuarioService {
         String passwordHasheada = passwordEncoder.encode(request.password());
 
         Usuario usuario = Usuario.builder()
-                .nombre(request.name())
+                .nombre(request.nombre())
                 .email(request.email())
                 .password(passwordHasheada)
-                .icono(request.icon())
+                .icono(request.icono())
                 .rol(rol)
                 .build();
 
@@ -61,6 +59,7 @@ public class UsuarioService {
 
     }
 
+    @Transactional(readOnly = true)
     public AuthResponse login(String email, String password) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(email, password)
@@ -82,7 +81,7 @@ public class UsuarioService {
     }
 
 
-    public Usuario actualizarUsuario(Long id, UpdateUsuarioRequest request) {
+    public Usuario actualizarUsuario(Long id, @NonNull UpdateUsuarioRequest request) {
         Usuario usuarioExistente = usuarioRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
 
@@ -95,5 +94,11 @@ public class UsuarioService {
         return usuarioRepository.save(usuarioActualizado);
     }
 
-
+    @Transactional(readOnly = true)
+    public List<UsuarioResponse> getUsuariosByRol(RolUsuario rol) {
+        return usuarioRepository.findByRol(rol)
+                .stream()
+                .map(u -> new UsuarioResponse(u.getId(), u.getNombre(), u.getEmail(), u.getIcono()))
+                .toList();
+    }
 }

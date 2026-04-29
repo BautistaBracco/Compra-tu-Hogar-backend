@@ -1,21 +1,24 @@
 package com.practicasDeDesarrollo.backend.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
-@Builder(toBuilder = true)
+@Setter
+@SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
 @Table(name = "publicaciones")
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-public class Publicacion {
+public class Publicacion extends Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,16 +26,30 @@ public class Publicacion {
 
     @NotNull
     @DecimalMin(value = "0.01")
-    @Column(nullable = false, precision = 12, scale = 2)
+    @Column(nullable = false, precision = 19, scale = 2) // Mejorada la precisión
     private BigDecimal precio;
 
+    @NotBlank
+    @Column(nullable = false, length = 1200)
+    private String descripcion;
+
     @NotNull
-    @ManyToOne(optional = false)
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean fueVendida = false;
+
+    @NotNull
+    @ManyToOne(optional = false, fetch = FetchType.LAZY) // Optimización
     @JoinColumn(name = "inmobiliaria_id", nullable = false)
     private Usuario inmobiliaria;
 
     @NotNull
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY) // Optimización
     @JoinColumn(name = "propiedad_id", nullable = false)
     private Propiedad propiedad;
+
+    @OneToMany(mappedBy = "publicacion", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("orden ASC")
+    @Builder.Default
+    private List<Imagen> imagenes = new ArrayList<>();
 }
