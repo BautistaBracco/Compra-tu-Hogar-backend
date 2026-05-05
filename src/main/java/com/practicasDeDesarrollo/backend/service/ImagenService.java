@@ -19,15 +19,22 @@ public class ImagenService {
 
     public String guardar(MultipartFile file) throws IOException {
 
-        if (!Objects.requireNonNull(file.getContentType()).startsWith("image/")) {
+        if (file.isEmpty()) {
+            throw new IllegalArgumentException("Archivo vacío");
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
             throw new IllegalArgumentException("El archivo no es una imagen");
         }
 
         String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
-        Path path = Paths.get(uploadDir).resolve(filename);
 
-        Files.createDirectories(path.getParent());
-        Files.write(path, file.getBytes());
+        Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+        Files.createDirectories(uploadPath);
+
+        Path filePath = uploadPath.resolve(filename);
+        Files.write(filePath, file.getBytes());
 
         return "/uploads/" + filename;
     }

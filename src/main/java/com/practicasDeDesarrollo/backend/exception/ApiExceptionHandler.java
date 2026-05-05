@@ -20,7 +20,6 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class ApiExceptionHandler {
 
-    // 🔹 Helper interno (evita crear otra clase)
     private ApiError buildError(
             HttpStatus status,
             ErrorCode code,
