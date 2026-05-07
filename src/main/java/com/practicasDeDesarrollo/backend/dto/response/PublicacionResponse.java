@@ -8,10 +8,8 @@ public record PublicacionResponse(
         Long id,
         String descripcion,
         BigDecimal precio,
-        Boolean fueVendida,
         List<String> imagenes,
-        Long inmobiliariaId,
-        Long propiedadId
-
+        UsuarioResponse inmobiliaria,
+        PropiedadResponse propiedad
 ) {
 }

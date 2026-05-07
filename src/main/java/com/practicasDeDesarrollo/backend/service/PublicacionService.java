@@ -2,12 +2,12 @@ package com.practicasDeDesarrollo.backend.service;
 
 import com.practicasDeDesarrollo.backend.dto.request.CreatePublicacionRequest;
 import com.practicasDeDesarrollo.backend.dto.request.UpdatePublicacionRequest;
+import com.practicasDeDesarrollo.backend.dto.response.PropiedadResponse;
 import com.practicasDeDesarrollo.backend.dto.response.PublicacionResponse;
-import com.practicasDeDesarrollo.backend.entity.Imagen;
-import com.practicasDeDesarrollo.backend.entity.Propiedad;
-import com.practicasDeDesarrollo.backend.entity.Publicacion;
-import com.practicasDeDesarrollo.backend.entity.Usuario;
-import com.practicasDeDesarrollo.backend.repository.ImagenRepository;
+import com.practicasDeDesarrollo.backend.dto.response.UsuarioResponse;
+import com.practicasDeDesarrollo.backend.entity.*;
+import com.practicasDeDesarrollo.backend.exception.ConflictException;
+import com.practicasDeDesarrollo.backend.entity.enums.TipoPropiedad;
 import com.practicasDeDesarrollo.backend.repository.PublicacionRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -15,8 +15,11 @@ import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Service
@@ -24,12 +27,68 @@ import java.util.stream.IntStream;
 @RequiredArgsConstructor
 public class PublicacionService {
     private final PublicacionRepository publicacionRepository;
-    private final ImagenRepository imagenRepository;
     private final PropiedadService propiedadService;
+
+    @Transactional(Transactional.TxType.SUPPORTS)
+    public List<PublicacionResponse> buscarPublicaciones(
+            Boolean vendida,
+            TipoPropiedad tipo,
+            BigDecimal minPrecio,
+            BigDecimal maxPrecio,
+            String ubicacion,
+            Integer ambientesMin,
+            Integer ambientesMax,
+            Long inmobiliariaId,
+            List<Long> caracteristicaIds
+    ) {
+        Boolean vendidaEf = vendida != null ? vendida : false;
+
+        List<Long> caracteristicaIdsEf = caracteristicaIds == null
+                ? List.of()
+                : caracteristicaIds.stream().distinct().toList();
+
+        List<Publicacion> results;
+        if (caracteristicaIdsEf.isEmpty()) {
+            results = publicacionRepository.search(
+                    vendidaEf,
+                    tipo,
+                    minPrecio,
+                    maxPrecio,
+                    ubicacion,
+                    ambientesMin,
+                    ambientesMax,
+                    inmobiliariaId
+            );
+        } else {
+            results = publicacionRepository.searchMatchAllCaracteristicas(
+                    vendidaEf,
+                    tipo,
+                    minPrecio,
+                    maxPrecio,
+                    ubicacion,
+                    ambientesMin,
+                    ambientesMax,
+                    inmobiliariaId,
+                    caracteristicaIdsEf,
+                    caracteristicaIdsEf.size()
+            );
+        }
+
+        return results.stream().map(this::mapToResponse).toList();
+    }
 
     public PublicacionResponse createPublicacion(@NonNull CreatePublicacionRequest request, Usuario inmobiliaria) {
 
         Propiedad propiedad = propiedadService.buscarOCrear(request.propiedad());
+
+        if (Boolean.TRUE.equals(propiedad.getVendida())) {
+            throw new ConflictException("La propiedad ya fue vendida; no se puede volver a publicar");
+        }
+
+        publicacionRepository.findByInmobiliariaIdAndPropiedadId(inmobiliaria.getId(), propiedad.getId())
+                .ifPresent(existing -> {
+                    throw new ConflictException("Ya existe una publicacion para esta propiedad; edita la existente");
+                });
 
         Publicacion p = Publicacion.builder()
                 .precio(request.precio())
@@ -112,10 +171,40 @@ public class PublicacionService {
     }
 
     private PublicacionResponse mapToResponse(Publicacion p) {
+        Usuario inmobiliaria = p.getInmobiliaria();
+        UsuarioResponse inmobiliariaResponse = new UsuarioResponse(
+                inmobiliaria.getId(),
+                inmobiliaria.getNombre(),
+                inmobiliaria.getEmail(),
+                inmobiliaria.getIcono()
+        );
+
+        Propiedad propiedad = p.getPropiedad();
+        Set<String> caracteristicas = propiedad.getCaracteristicas().stream()
+                .map(Caracteristica::getNombre)
+                .collect(Collectors.toSet());
+
+        PropiedadResponse propiedadResponse = new PropiedadResponse(
+                propiedad.getId(),
+                propiedad.getUbicacion(),
+                propiedad.getPiso(),
+                propiedad.getDepto(),
+                propiedad.getTipo(),
+                propiedad.getSuperficie(),
+                propiedad.getAmbientes(),
+                propiedad.getSanitarios(),
+                propiedad.getExpensas(),
+                propiedad.getVendida(),
+                caracteristicas
+        );
+
         return new PublicacionResponse(
-                p.getId(), p.getDescripcion(), p.getPrecio(), p.getFueVendida(),
+                p.getId(),
+                p.getDescripcion(),
+                p.getPrecio(),
                 p.getImagenes().stream().map(Imagen::getUrl).toList(),
-                p.getInmobiliaria().getId(), p.getPropiedad().getId()
+                inmobiliariaResponse,
+                propiedadResponse
         );
     }
 }

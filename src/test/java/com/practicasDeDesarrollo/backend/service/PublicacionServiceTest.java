@@ -8,6 +8,7 @@ import com.practicasDeDesarrollo.backend.entity.Publicacion;
 import com.practicasDeDesarrollo.backend.entity.Usuario;
 import com.practicasDeDesarrollo.backend.entity.enums.RolUsuario;
 import com.practicasDeDesarrollo.backend.entity.enums.TipoPropiedad;
+import com.practicasDeDesarrollo.backend.exception.ConflictException;
 import com.practicasDeDesarrollo.backend.repository.PublicacionRepository;
 import com.practicasDeDesarrollo.backend.repository.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -72,7 +74,7 @@ class PublicacionServiceTest {
     // Método auxiliar para no repetir código en los tests
     private PublicacionResponse crearPublicacionBase() {
         CreatePropiedadRequest propReq = new CreatePropiedadRequest(
-                TipoPropiedad.DEPTO, "Pringles 450", "2", "B", 40, 2, 1, 12000
+                TipoPropiedad.DEPTO, "Pringles 450", "2", "B", 40, 2, 1, 12000, Set.of()
         );
         CreatePublicacionRequest pubReq = new CreatePublicacionRequest(
                 "Oportunidad inversores",
@@ -95,13 +97,151 @@ class PublicacionServiceTest {
         // Assert: Respuesta del servicio
         assertNotNull(response.id());
         assertEquals(2, response.imagenes().size());
-        assertEquals(inmobiliariaPersistida.getId(), response.inmobiliariaId());
+        assertEquals(inmobiliariaPersistida.getId(), response.inmobiliaria().id());
 
         // Assert: Verificación en la Base de Datos real
         Publicacion enDB = publicacionRepository.findById(response.id()).orElseThrow();
         assertEquals(2, enDB.getImagenes().size());
         assertEquals(1, enDB.getImagenes().get(0).getOrden());
         assertEquals("http://image.com/1.jpg", enDB.getImagenes().get(0).getUrl());
+    }
+
+    @Test
+    void createPublicacion_cuandoYaExisteActivaParaMismaInmobiliariaYPropiedad_deberiaLanzarConflict() {
+        // Arrange
+        crearPublicacionBase();
+
+        CreatePropiedadRequest propReq = new CreatePropiedadRequest(
+                TipoPropiedad.DEPTO, "Pringles 450", "2", "B", 40, 2, 1, 12000, Set.of()
+        );
+        CreatePublicacionRequest pubReq = new CreatePublicacionRequest(
+                "Duplicada",
+                new BigDecimal("86000.00"),
+                List.of("http://image.com/x.jpg"),
+                propReq
+        );
+
+        // Act & Assert
+        ConflictException ex = assertThrows(ConflictException.class, () -> {
+            publicacionService.createPublicacion(pubReq, inmobiliariaPersistida);
+        });
+        assertEquals("Ya existe una publicacion para esta propiedad; edita la existente", ex.getMessage());
+    }
+
+    @Test
+    void createPublicacion_cuandoYaExisteVendidaParaMismaInmobiliariaYPropiedad_deberiaLanzarConflictConMensajeVendida() {
+        // Arrange
+        PublicacionResponse creada = crearPublicacionBase();
+        Publicacion p = publicacionRepository.findById(creada.id()).orElseThrow();
+        p.getPropiedad().setVendida(true);
+        publicacionRepository.saveAndFlush(p);
+
+        CreatePropiedadRequest propReq = new CreatePropiedadRequest(
+                TipoPropiedad.DEPTO, "Pringles 450", "2", "B", 40, 2, 1, 12000, Set.of()
+        );
+        CreatePublicacionRequest pubReq = new CreatePublicacionRequest(
+                "Re-publicando",
+                new BigDecimal("87000.00"),
+                List.of("http://image.com/y.jpg"),
+                propReq
+        );
+
+        // Act & Assert
+        ConflictException ex = assertThrows(ConflictException.class, () -> {
+            publicacionService.createPublicacion(pubReq, inmobiliariaPersistida);
+        });
+        assertEquals("La propiedad ya fue vendida; no se puede volver a publicar", ex.getMessage());
+    }
+
+    @Test
+    void buscarPublicaciones_filtrandoPorInmobiliaria_deberiaRetornarSoloLasDelDueno() {
+        // Arrange: 2 publicaciones para el dueño
+        crearPublicacionBase();
+
+        CreatePropiedadRequest propReq2 = new CreatePropiedadRequest(
+                TipoPropiedad.CASA, "Calle Falsa 123", null, null, 100, 4, 2, 0, Set.of()
+        );
+        CreatePublicacionRequest pubReq2 = new CreatePublicacionRequest(
+                "Casa amplia",
+                new BigDecimal("150000.00"),
+                List.of("http://image.com/casa.jpg"),
+                propReq2
+        );
+        publicacionService.createPublicacion(pubReq2, inmobiliariaPersistida);
+
+        // Arrange: 1 publicación para otra inmobiliaria
+        CreatePropiedadRequest propReq3 = new CreatePropiedadRequest(
+                TipoPropiedad.DEPTO, "Otra Direccion 999", "1", "C", 30, 1, 1, 0, Set.of()
+        );
+        CreatePublicacionRequest pubReq3 = new CreatePublicacionRequest(
+                "Ajena",
+                new BigDecimal("50000.00"),
+                List.of("http://image.com/ajena.jpg"),
+                propReq3
+        );
+        publicacionService.createPublicacion(pubReq3, inmobiliariaIntrusa);
+
+        // Act
+        List<PublicacionResponse> mine = publicacionService.buscarPublicaciones(
+                false,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                inmobiliariaPersistida.getId(),
+                null
+        );
+
+        // Assert
+        assertEquals(2, mine.size());
+        assertTrue(mine.stream().allMatch(p -> p.inmobiliaria().id().equals(inmobiliariaPersistida.getId())));
+    }
+
+    @Test
+    void buscarPublicaciones_matchAllCaracteristicas_deberiaExigirTodas() {
+        // Arrange: creamos 2 caracteristicas en catalogo y las usamos por id
+        // Nota: DataInitializer del perfil test ya crea AIRE ACONDICIONADO y COCHERA.
+
+        // Publicacion 1: tiene [1,2]
+        CreatePropiedadRequest propReq1 = new CreatePropiedadRequest(
+                TipoPropiedad.DEPTO, "MatchAll 1", "1", "A", 40, 2, 1, 0, Set.of(1L, 2L)
+        );
+        publicacionService.createPublicacion(new CreatePublicacionRequest(
+                "Con ambas",
+                new BigDecimal("100000.00"),
+                List.of("http://image.com/a.jpg"),
+                propReq1
+        ), inmobiliariaPersistida);
+
+        // Publicacion 2: tiene solo [1]
+        CreatePropiedadRequest propReq2 = new CreatePropiedadRequest(
+                TipoPropiedad.DEPTO, "MatchAll 2", "1", "B", 40, 2, 1, 0, Set.of(1L)
+        );
+        publicacionService.createPublicacion(new CreatePublicacionRequest(
+                "Solo una",
+                new BigDecimal("90000.00"),
+                List.of("http://image.com/b.jpg"),
+                propReq2
+        ), inmobiliariaPersistida);
+
+        // Act: pedimos match ALL [1,2]
+        List<PublicacionResponse> res = publicacionService.buscarPublicaciones(
+                false,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                List.of(1L, 2L)
+        );
+
+        // Assert: solo la que tiene ambas
+        assertEquals(1, res.size());
+        assertEquals("Con ambas", res.get(0).descripcion());
     }
 
     // ==========================================

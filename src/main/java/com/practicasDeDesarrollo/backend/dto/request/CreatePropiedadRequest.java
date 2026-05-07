@@ -16,5 +16,7 @@ public record CreatePropiedadRequest(
         @Positive Integer superficie,
         @Positive Integer ambientes,
         @PositiveOrZero Integer sanitarios,
-        @PositiveOrZero Integer expensas
-) {}
+        @PositiveOrZero Integer expensas,
+        Set<Long> caracteristicaIds
+) {
+}

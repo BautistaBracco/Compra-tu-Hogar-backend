@@ -17,7 +17,15 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "publicaciones")
+@Table(
+        name = "publicaciones",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_publicacion_inmo_prop",
+                        columnNames = {"inmobiliaria_id", "propiedad_id"}
+                )
+        }
+)
 public class Publicacion extends Auditable {
 
     @Id
@@ -32,11 +40,6 @@ public class Publicacion extends Auditable {
     @NotBlank
     @Column(nullable = false, length = 1200)
     private String descripcion;
-
-    @NotNull
-    @Column(nullable = false)
-    @Builder.Default
-    private Boolean fueVendida = false;
 
     @NotNull
     @ManyToOne(optional = false, fetch = FetchType.LAZY) // Optimización

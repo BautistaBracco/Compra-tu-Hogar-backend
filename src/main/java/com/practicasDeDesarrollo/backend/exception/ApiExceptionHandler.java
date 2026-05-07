@@ -2,9 +2,11 @@ package com.practicasDeDesarrollo.backend.exception;
 
 import com.practicasDeDesarrollo.backend.dto.response.ApiError;
 import com.practicasDeDesarrollo.backend.dto.response.ErrorCode;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -121,7 +123,58 @@ public class ApiExceptionHandler {
         return ResponseEntity.badRequest().body(error);
     }
 
-    // 🔹 4. Fallback (500)
+    // 🔹 4. Recurso no encontrado
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<ApiError> handleNotFound(
+            EntityNotFoundException ex,
+            HttpServletRequest request
+    ) {
+        ApiError error = buildError(
+                HttpStatus.NOT_FOUND,
+                ErrorCode.NOT_FOUND,
+                ex.getMessage(),
+                request.getRequestURI(),
+                null
+        );
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    // 🔹 5. Conflictos de integridad (duplicados, unique constraints, etc.)
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiError> handleConflict(
+            DataIntegrityViolationException ex,
+            HttpServletRequest request
+    ) {
+        ApiError error = buildError(
+                HttpStatus.CONFLICT,
+                ErrorCode.CONFLICT,
+                "Conflicto: el recurso ya existe o viola una restriccion de integridad",
+                request.getRequestURI(),
+                null
+        );
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+    // 🔹 5b. Conflictos de negocio (datos incompatibles)
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ApiError> handleBusinessConflict(
+            ConflictException ex,
+            HttpServletRequest request
+    ) {
+        ApiError error = buildError(
+                HttpStatus.CONFLICT,
+                ErrorCode.CONFLICT,
+                ex.getMessage(),
+                request.getRequestURI(),
+                null
+        );
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+    // 🔹 6. Fallback (500)
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGlobal(
             Exception ex,

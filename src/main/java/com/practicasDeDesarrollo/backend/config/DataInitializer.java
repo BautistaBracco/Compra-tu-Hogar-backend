@@ -2,10 +2,13 @@ package com.practicasDeDesarrollo.backend.config;
 
 import com.practicasDeDesarrollo.backend.dto.request.CreateUsuarioRequest;
 import com.practicasDeDesarrollo.backend.entity.enums.RolUsuario;
+import com.practicasDeDesarrollo.backend.repository.CaracteristicaRepository;
 import com.practicasDeDesarrollo.backend.repository.UsuarioRepository;
+import com.practicasDeDesarrollo.backend.service.CaracteristicaService;
 import com.practicasDeDesarrollo.backend.service.UsuarioService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Profile;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -18,6 +21,8 @@ public class DataInitializer {
 
     private final UsuarioRepository usuarioRepository;
     private final UsuarioService usuarioService;
+    private final CaracteristicaRepository caracteristicaRepository;
+    private final CaracteristicaService caracteristicaService;
 
     @EventListener(ApplicationReadyEvent.class)
     @Transactional
@@ -51,6 +56,10 @@ public class DataInitializer {
                 RolUsuario.INMOBILIARIA
         );
 
+        // Seed de caracteristicas (solo perfil test)
+        crearCaracteristicaSiNoExiste("AIRE ACONDICIONADO");
+        crearCaracteristicaSiNoExiste("COCHERA");
+
         log.info("Inicialización de datos completada!");
     }
 
@@ -63,5 +72,13 @@ public class DataInitializer {
             log.info("Usuario ya existe: {}", email);
         }
     }
-}
 
+    private void crearCaracteristicaSiNoExiste(String nombreNormalizado) {
+        if (!caracteristicaRepository.existsByNombre(nombreNormalizado)) {
+            caracteristicaService.crear(nombreNormalizado);
+            log.info("Caracteristica creada: {}", nombreNormalizado);
+        } else {
+            log.info("Caracteristica ya existe: {}", nombreNormalizado);
+        }
+    }
+}
