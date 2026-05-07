@@ -21,6 +21,8 @@ WORKDIR /app
 
 # Copiamos el jar generado
 COPY --from=build /app/build/libs/*.jar app.jar
+# Crear directorio de uploads con permisos
+RUN mkdir -p /app/uploads && chmod 755 /app/uploads
 
 EXPOSE 8080
 

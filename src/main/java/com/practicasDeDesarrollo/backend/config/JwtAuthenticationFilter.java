@@ -37,33 +37,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String jwt = authHeader.substring(7);
 
         try {
-            // Toda la lógica que interactúa con el token va adentro del try
             String userEmail = jwtService.extractUsername(jwt);
 
             if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
 
                 if (jwtService.isTokenValid(jwt, userDetails)) {
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            userDetails, null, userDetails.getAuthorities()
-                    );
+                    UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(
+                                    userDetails, null, userDetails.getAuthorities()
+                            );
+
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }
-        } catch (io.jsonwebtoken.ExpiredJwtException e) {
-            // Atajamos el token vencido (401 Unauthorized)
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json");
-            response.getWriter().write("{\"mensaje\": \"El token ha expirado. Por favor, inicie sesion nuevamente.\"}");
-            return;
 
         } catch (Exception e) {
-            // Atajamos cualquier otro error criptográfico o de firma (403 Forbidden)
-            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            response.setContentType("application/json");
-            response.getWriter().write("{\"mensaje\": \"Token invalido o corrupto.\"}");
-            return;
+            // 👇 NO responder acá
+            System.out.println("JWT error: " + e.getMessage());
         }
 
         filterChain.doFilter(request, response);

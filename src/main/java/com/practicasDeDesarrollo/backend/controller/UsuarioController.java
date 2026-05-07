@@ -13,13 +13,13 @@ import java.io.IOException;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/imagenes")
+@RequestMapping("/usuarios")
 @RequiredArgsConstructor
-public class ImagenController {
+public class UsuarioController {
 
     private final ImagenService imagenService;
 
-    @PostMapping
+    @PostMapping("/imagen")
     public ResponseEntity<?> upload(@RequestParam("file") MultipartFile file) throws IOException {
 
         String url = imagenService.guardar(file);
