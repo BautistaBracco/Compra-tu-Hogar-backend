@@ -28,9 +28,7 @@ http:
           "caracteristicaIds":[1,2,3]
         }
       }
-  auth:
-    type: bearer
-    token: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJJbm1vYmlsaWFyaWFBbGZvbnNvQGdtYWlsLmNvbSIsImlkIjo1LCJyb2xlIjoiUk9MRV9JTk1PQklMSUFSSUEiLCJpYXQiOjE3NzgxNzQzNDMsImV4cCI6MTc3ODE3Nzk0M30.tOfDdO7JBV6-GyWVboA0hIMgoQcVDJqs9FBJgTW15dU
+  auth: inherit
 
 settings:
   encodeUrl: true

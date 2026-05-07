@@ -6,9 +6,7 @@ info:
 http:
   method: GET
   url: "{{BASE_URL}}/usuarios/publicaciones"
-  auth:
-    type: bearer
-    token: "{{my_token}}"
+  auth: inherit
 
 settings:
   encodeUrl: true
