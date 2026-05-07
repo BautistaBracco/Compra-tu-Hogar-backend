@@ -1,0 +1,23 @@
+info:
+  name: Create USR
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{BASE_URL}}/auth/register"
+  body:
+    type: json
+    data: |-
+      {
+          "name":"bauti",
+          "email":"bauti2@gmail.com",
+          "password":"12345"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

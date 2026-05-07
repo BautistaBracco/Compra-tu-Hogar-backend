@@ -1,0 +1,25 @@
+info:
+  name: Actualizar publicacion
+  type: http
+  seq: 2
+
+http:
+  method: PUT
+  url: "{{BASE_URL}}/inmobiliaria/publicacion/7"
+  body:
+    type: json
+    data: |-
+      {
+          "descripcion": "Choza de madera",
+          "precio": 2000
+        
+      }
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJJbm1vYmlsaWFyaWFBbGZvbnNvQGdtYWlsLmNvbSIsImlkIjo1LCJyb2xlIjoiUk9MRV9JTk1PQklMSUFSSUEiLCJpYXQiOjE3NzgxNzkwNjQsImV4cCI6MTc3ODE4MjY2NH0.NEkpVi7J-PXN7LtZ_JFURe5w_LkRW6ezjm1lfuT5wRc
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

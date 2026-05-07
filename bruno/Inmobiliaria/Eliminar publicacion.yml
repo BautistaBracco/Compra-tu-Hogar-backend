@@ -1,0 +1,17 @@
+info:
+  name: Eliminar publicacion
+  type: http
+  seq: 3
+
+http:
+  method: DELETE
+  url: "{{BASE_URL}}/inmobiliaria/publicacion/1"
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJyZW1heEBnbWFpbC5jb20iLCJpZCI6Miwicm9sZSI6IlJPTEVfSU5NT0JJTElBUklBIiwiaWF0IjoxNzc3NDc4NDUwLCJleHAiOjE3Nzc0ODIwNTB9.ELP5A-ftJXxkIFXxlpRd-X2hyjraq8_G9CIwLTnQzao
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
