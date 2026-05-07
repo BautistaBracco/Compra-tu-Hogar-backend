@@ -10,10 +10,27 @@ http:
     type: json
     data: |-
       {
-          "email": "juan@gmail.com",
-          "password": "12345678"
+        "email": {{admin}},
+        "password": "12345678"
       }
   auth: inherit
+
+runtime:
+  variables:
+    - name: admin
+      value: '"juan@gmail.com"'
+    - name: comprador
+      value: '"nestor@gmail.com"'
+    - name: inmobiliaria
+      value: '"InmobiliariaAlfonso@gmail.com"'
+  scripts:
+    - type: after-response
+      code: |-
+        const data = res.getBody();
+
+        if (data.token) {
+          bru.setVar("my_token", data.token);
+        }
 
 settings:
   encodeUrl: true

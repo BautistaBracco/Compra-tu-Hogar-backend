@@ -8,7 +8,7 @@ http:
   url: "{{BASE_URL}}/usuarios/publicaciones"
   auth:
     type: bearer
-    token: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqdWFuQGdtYWlsLmNvbSIsImlkIjozLCJyb2xlIjoiUk9MRV9BRE1JTiIsImlhdCI6MTc3ODE4OTgxMywiZXhwIjoxNzc4MTkzNDEzfQ.WMNw2hqAEQ8r3GHdUBON20fRPsgNfo8qJ95qSTHvhZE
+    token: "{{my_token}}"
 
 settings:
   encodeUrl: true
