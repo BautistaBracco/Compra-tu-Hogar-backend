@@ -5,5 +5,7 @@ public enum ErrorCode {
     INVALID_ENUM,
     JSON_MALFORMED,
     BUSINESS_ERROR,
+    NOT_FOUND,
+    CONFLICT,
     INTERNAL_ERROR
 }

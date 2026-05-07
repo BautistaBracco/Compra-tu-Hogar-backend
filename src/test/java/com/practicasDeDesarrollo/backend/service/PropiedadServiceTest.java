@@ -3,12 +3,15 @@ package com.practicasDeDesarrollo.backend.service;
 import com.practicasDeDesarrollo.backend.dto.request.CreatePropiedadRequest;
 import com.practicasDeDesarrollo.backend.entity.Propiedad;
 import com.practicasDeDesarrollo.backend.entity.enums.TipoPropiedad;
+import com.practicasDeDesarrollo.backend.exception.ConflictException;
 import com.practicasDeDesarrollo.backend.repository.PropiedadRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -26,7 +29,7 @@ class PropiedadServiceTest {
     @Test
     void buscarOCrear_cuandoNoExiste_deberiaGuardarlaEnLaBaseDeDatos() {
         CreatePropiedadRequest req = new CreatePropiedadRequest(
-                TipoPropiedad.DEPTO, " av. mitre 123  ", " 4 ", "a", 50, 2, 1, 15000
+                TipoPropiedad.DEPTO, " av. mitre 123  ", " 4 ", "a", 50, 2, 1, 15000, Set.of()
         );
 
         Propiedad resultado = propiedadService.buscarOCrear(req);
@@ -56,7 +59,7 @@ class PropiedadServiceTest {
 
         // Armamos un request que coincida (ignorando mayúsculas/espacios)
         CreatePropiedadRequest req = new CreatePropiedadRequest(
-                TipoPropiedad.CASA, " calle falsa 123", null, null, 100, 4, 2, 0
+                TipoPropiedad.CASA, " calle falsa 123", null, null, 100, 4, 2, 0, Set.of()
         );
 
         // Act
@@ -67,5 +70,27 @@ class PropiedadServiceTest {
 
         // Verificamos que NO se creó un duplicado en la DB
         assertEquals(1, propiedadRepository.count(), "Debería seguir habiendo solo 1 registro");
+    }
+
+    @Test
+    void buscarOCrear_cuandoYaExisteConDatosDistintos_deberiaLanzarConflict() {
+        Propiedad existente = Propiedad.builder()
+                .tipo(TipoPropiedad.DEPTO)
+                .ubicacion("AV. MITRE 123")
+                .piso("4")
+                .depto("A")
+                .superficie(50)
+                .ambientes(2)
+                .sanitarios(1)
+                .expensas(15000)
+                .build();
+        propiedadRepository.saveAndFlush(existente);
+
+        // Mismo identity (ubicacion/piso/depto) pero cambia un atributo intrinseco
+        CreatePropiedadRequest req = new CreatePropiedadRequest(
+                TipoPropiedad.DEPTO, "av. mitre 123", "4", "a", 60, 2, 1, 15000, Set.of()
+        );
+
+        assertThrows(ConflictException.class, () -> propiedadService.buscarOCrear(req));
     }
 }

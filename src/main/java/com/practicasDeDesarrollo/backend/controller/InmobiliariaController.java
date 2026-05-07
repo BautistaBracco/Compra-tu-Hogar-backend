@@ -19,7 +19,6 @@ public class InmobiliariaController {
 
     private final PublicacionService publicacionService;
 
-
     @PostMapping("/publicacion")
     public ResponseEntity<PublicacionResponse> crearPublicacion(
             @Valid @RequestBody CreatePublicacionRequest request,

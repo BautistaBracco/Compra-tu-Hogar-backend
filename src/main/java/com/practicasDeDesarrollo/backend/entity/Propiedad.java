@@ -69,6 +69,12 @@ public class Propiedad extends Auditable {
     @Builder.Default
     private String depto = ""; // "A", "4", "C-2"
 
+
+    @NotNull
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean vendida = false;
+
     @ManyToMany
     @JoinTable(
             name = "propiedad_caracteristica",
@@ -77,4 +83,5 @@ public class Propiedad extends Auditable {
     )
     @Builder.Default
     private Set<Caracteristica> caracteristicas = new HashSet<>();
+
 }
