@@ -11,6 +11,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.exc.InvalidFormatException;
 
@@ -40,6 +42,11 @@ public class ApiExceptionHandler {
         );
     }
 
+    private static String requestPath(HttpServletRequest request) {
+        // Keep it aligned with Security handlers and typical Spring behavior
+        return request.getRequestURI();
+    }
+
     // 🔹 1. Validaciones (@Valid)
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> handleValidation(
@@ -56,7 +63,7 @@ public class ApiExceptionHandler {
                 HttpStatus.BAD_REQUEST,
                 ErrorCode.VALIDATION_ERROR,
                 "Error en los datos enviados",
-                request.getRequestURI(),
+                requestPath(request),
                 details
         );
 
@@ -87,7 +94,7 @@ public class ApiExceptionHandler {
                     HttpStatus.BAD_REQUEST,
                     ErrorCode.INVALID_ENUM,
                     "Valor inválido para enum",
-                    request.getRequestURI(),
+                    requestPath(request),
                     details
             );
 
@@ -99,7 +106,7 @@ public class ApiExceptionHandler {
                 HttpStatus.BAD_REQUEST,
                 ErrorCode.JSON_MALFORMED,
                 "JSON mal formado",
-                request.getRequestURI(),
+                requestPath(request),
                 null
         );
 
@@ -116,7 +123,7 @@ public class ApiExceptionHandler {
                 HttpStatus.BAD_REQUEST,
                 ErrorCode.BUSINESS_ERROR,
                 ex.getMessage(),
-                request.getRequestURI(),
+                requestPath(request),
                 null
         );
 
@@ -133,7 +140,7 @@ public class ApiExceptionHandler {
                 HttpStatus.NOT_FOUND,
                 ErrorCode.NOT_FOUND,
                 ex.getMessage(),
-                request.getRequestURI(),
+                requestPath(request),
                 null
         );
 
@@ -150,7 +157,7 @@ public class ApiExceptionHandler {
                 HttpStatus.CONFLICT,
                 ErrorCode.CONFLICT,
                 "Conflicto: el recurso ya existe o viola una restriccion de integridad",
-                request.getRequestURI(),
+                requestPath(request),
                 null
         );
 
@@ -167,11 +174,29 @@ public class ApiExceptionHandler {
                 HttpStatus.CONFLICT,
                 ErrorCode.CONFLICT,
                 ex.getMessage(),
-                request.getRequestURI(),
+                requestPath(request),
                 null
         );
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+    // 🔹 5c. Autenticación (credenciales inválidas)
+    @ExceptionHandler({AuthenticationException.class, UsernameNotFoundException.class})
+    public ResponseEntity<ApiError> handleAuth(
+            RuntimeException ex,
+            HttpServletRequest request
+    ) {
+        // Mensaje genérico para no filtrar si el usuario existe
+        ApiError error = buildError(
+                HttpStatus.UNAUTHORIZED,
+                ErrorCode.AUTH_INVALID_CREDENTIALS,
+                "Credenciales inválidas",
+                requestPath(request),
+                null
+        );
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
 
     // 🔹 6. Fallback (500)
@@ -184,7 +209,7 @@ public class ApiExceptionHandler {
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 ErrorCode.INTERNAL_ERROR,
                 "Error interno del servidor",
-                request.getRequestURI(),
+                requestPath(request),
                 null
         );
 
