@@ -81,17 +81,16 @@ public class UsuarioService {
     }
 
 
-    public Usuario actualizarUsuario(Long id, @NonNull UpdateUsuarioRequest request) {
-        Usuario usuarioExistente = usuarioRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
+    public UsuarioResponse actualizarUsuario(@NonNull UpdateUsuarioRequest request, Usuario usuario) {
+        if (request.nombre() != null) {
+            usuario.setNombre(request.nombre());
+        }
+        if (request.icono() != null) {
+            usuario.setIcono(request.icono());
+        }
 
-        Usuario usuarioActualizado = usuarioExistente.toBuilder()
-                .nombre(request.nombre())
-                .icono(request.icono())
-                // El email, password y rol NO se tocan aquí
-                .build();
-
-        return usuarioRepository.save(usuarioActualizado);
+        Usuario saved = usuarioRepository.save(usuario);
+        return new UsuarioResponse(saved.getId(), saved.getNombre(), saved.getEmail(), saved.getIcono());
     }
 
     @Transactional(readOnly = true)

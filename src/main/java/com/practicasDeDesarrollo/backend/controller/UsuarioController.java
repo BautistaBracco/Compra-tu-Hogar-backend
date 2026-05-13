@@ -1,15 +1,17 @@
 package com.practicasDeDesarrollo.backend.controller;
 
+import com.practicasDeDesarrollo.backend.dto.request.UpdateUsuarioRequest;
 import com.practicasDeDesarrollo.backend.dto.response.CaracteristicaResponse;
 import com.practicasDeDesarrollo.backend.dto.response.PropiedadResponse;
 import com.practicasDeDesarrollo.backend.dto.response.PublicacionResponse;
+import com.practicasDeDesarrollo.backend.dto.response.UsuarioResponse;
+import com.practicasDeDesarrollo.backend.entity.Usuario;
 import com.practicasDeDesarrollo.backend.entity.enums.TipoPropiedad;
-import com.practicasDeDesarrollo.backend.service.CaracteristicaService;
-import com.practicasDeDesarrollo.backend.service.ImagenService;
-import com.practicasDeDesarrollo.backend.service.PropiedadService;
-import com.practicasDeDesarrollo.backend.service.PublicacionService;
+import com.practicasDeDesarrollo.backend.service.*;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -27,6 +29,7 @@ public class UsuarioController {
     private final PropiedadService propiedadService;
     private final CaracteristicaService caracteristicaService;
     private final PublicacionService publicacionService;
+    private final UsuarioService usuarioService;
 
     @PostMapping("/imagen")
     public ResponseEntity<?> upload(@RequestParam("file") MultipartFile file) throws IOException {
@@ -34,6 +37,14 @@ public class UsuarioController {
         String url = imagenService.guardar(file);
 
         return ResponseEntity.ok(Map.of("url", url));
+    }
+
+    @PatchMapping("/perfil")
+    public ResponseEntity<UsuarioResponse> actualizarPerfil(
+            @Valid @RequestBody UpdateUsuarioRequest request,
+            @AuthenticationPrincipal Usuario usuario
+    ) {
+        return ResponseEntity.ok(usuarioService.actualizarUsuario(request, usuario));
     }
 
     @GetMapping("/propiedad/{direccion}")
