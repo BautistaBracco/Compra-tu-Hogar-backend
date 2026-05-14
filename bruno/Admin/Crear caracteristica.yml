@@ -1,0 +1,21 @@
+info:
+  name: Crear caracteristica
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{BASE_URL}}/admin/caracteristicas"
+  body:
+    type: json
+    data: |-
+      {
+          "nombre": "BLA"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

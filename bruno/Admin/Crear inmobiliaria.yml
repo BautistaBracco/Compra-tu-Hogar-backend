@@ -1,0 +1,23 @@
+info:
+  name: Crear inmobiliaria
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{BASE_URL}}/admin/inmobiliaria"
+  body:
+    type: json
+    data: |-
+      {
+          "nombre":"remax",
+          "email":"remax@gmail.com",
+          "password":"12345"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

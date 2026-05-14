@@ -1,19 +1,17 @@
 package com.practicasDeDesarrollo.backend.controller;
 
-import com.practicasDeDesarrollo.backend.dto.response.CaracteristicaResponse;
-import com.practicasDeDesarrollo.backend.dto.response.PropiedadResponse;
-import com.practicasDeDesarrollo.backend.dto.response.PublicacionResponse;
-import com.practicasDeDesarrollo.backend.entity.enums.TipoPropiedad;
-import com.practicasDeDesarrollo.backend.service.CaracteristicaService;
-import com.practicasDeDesarrollo.backend.service.ImagenService;
-import com.practicasDeDesarrollo.backend.service.PropiedadService;
-import com.practicasDeDesarrollo.backend.service.PublicacionService;
+import com.practicasDeDesarrollo.backend.dto.request.UpdateUsuarioRequest;
+import com.practicasDeDesarrollo.backend.dto.request.PublicacionSearchParams;
+import com.practicasDeDesarrollo.backend.dto.response.*;
+import com.practicasDeDesarrollo.backend.entity.Usuario;
+import com.practicasDeDesarrollo.backend.service.*;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.math.BigDecimal;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +25,8 @@ public class UsuarioController {
     private final PropiedadService propiedadService;
     private final CaracteristicaService caracteristicaService;
     private final PublicacionService publicacionService;
+    private final UsuarioService usuarioService;
+    private final ResenaService resenaService;
 
     @PostMapping("/imagen")
     public ResponseEntity<?> upload(@RequestParam("file") MultipartFile file) throws IOException {
@@ -36,13 +36,21 @@ public class UsuarioController {
         return ResponseEntity.ok(Map.of("url", url));
     }
 
+    @PatchMapping("/perfil")
+    public ResponseEntity<UsuarioResponse> actualizarPerfil(
+            @Valid @RequestBody UpdateUsuarioRequest request,
+            @AuthenticationPrincipal Usuario usuario
+    ) {
+        return ResponseEntity.ok(usuarioService.actualizarUsuario(request, usuario));
+    }
+
     @GetMapping("/propiedad/{direccion}")
     public ResponseEntity<PropiedadResponse> obtenerPropiedadPorUbicacion(
             @PathVariable String direccion,
             @RequestParam(required = false) String piso,
-            @RequestParam(required = false) String depto) {
-
-        return propiedadService.buscarPorUbicacion(direccion, piso, depto)
+            @RequestParam(required = false) String depto,
+            @AuthenticationPrincipal Usuario usuario) {
+        return propiedadService.buscarPorUbicacion(direccion, piso, depto, usuario)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -52,29 +60,29 @@ public class UsuarioController {
         return ResponseEntity.ok(caracteristicaService.listar());
     }
 
+
+    @GetMapping("/publicacion/{id}")
+    public ResponseEntity<PublicacionResponse> obtenerPublicacionPorId(
+            @PathVariable Long id,
+            @AuthenticationPrincipal Usuario usuario
+    ) {
+        PublicacionResponse response = publicacionService.buscarPorId(id, usuario);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/publicaciones")
     public ResponseEntity<List<PublicacionResponse>> buscarPublicaciones(
-            @RequestParam(required = false) Boolean vendida,
-            @RequestParam(required = false) TipoPropiedad tipo,
-            @RequestParam(required = false) BigDecimal minPrecio,
-            @RequestParam(required = false) BigDecimal maxPrecio,
-            @RequestParam(required = false) String ubicacion,
-            @RequestParam(required = false) Integer ambientesMin,
-            @RequestParam(required = false) Integer ambientesMax,
-            @RequestParam(required = false) Long inmobiliariaId,
-            @RequestParam(required = false) List<Long> caracteristicaIds
+            @ModelAttribute PublicacionSearchParams params,
+            @AuthenticationPrincipal Usuario usuario
     ) {
-        return ResponseEntity.ok(publicacionService.buscarPublicaciones(
-                vendida,
-                tipo,
-                minPrecio,
-                maxPrecio,
-                ubicacion,
-                ambientesMin,
-                ambientesMax,
-                inmobiliariaId,
-                caracteristicaIds
-        ));
+        return ResponseEntity.ok(publicacionService.buscarPublicaciones(params, usuario));
+    }
+
+    @GetMapping("/publicaciones/{id}/reseñas")
+    public ResponseEntity<List<ResenaResponse>> listarResenas(
+            @PathVariable Long id
+    ) {
+        return ResponseEntity.ok(resenaService.listarResenasPorPublicacion(id));
     }
 
 }

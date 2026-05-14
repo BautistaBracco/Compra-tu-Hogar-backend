@@ -3,10 +3,14 @@ package com.practicasDeDesarrollo.backend.service;
 import com.practicasDeDesarrollo.backend.dto.response.AuthResponse;
 import com.practicasDeDesarrollo.backend.dto.request.CreateUsuarioRequest;
 import com.practicasDeDesarrollo.backend.dto.request.UpdateUsuarioRequest;
+import com.practicasDeDesarrollo.backend.dto.response.ResenaResponse;
 import com.practicasDeDesarrollo.backend.dto.response.UsuarioResponse;
+import com.practicasDeDesarrollo.backend.dto.response.PublicacionResponse;
+import com.practicasDeDesarrollo.backend.entity.Publicacion;
 import com.practicasDeDesarrollo.backend.entity.Usuario;
 import com.practicasDeDesarrollo.backend.entity.enums.RolUsuario;
 import com.practicasDeDesarrollo.backend.repository.UsuarioRepository;
+import com.practicasDeDesarrollo.backend.repository.PublicacionRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
@@ -18,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +30,8 @@ import java.util.List;
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final PublicacionRepository publicacionRepository;
+    private final PublicacionService publicacionService;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
@@ -81,17 +88,16 @@ public class UsuarioService {
     }
 
 
-    public Usuario actualizarUsuario(Long id, @NonNull UpdateUsuarioRequest request) {
-        Usuario usuarioExistente = usuarioRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
+    public UsuarioResponse actualizarUsuario(@NonNull UpdateUsuarioRequest request, Usuario usuario) {
+        if (request.nombre() != null) {
+            usuario.setNombre(request.nombre());
+        }
+        if (request.icono() != null) {
+            usuario.setIcono(request.icono());
+        }
 
-        Usuario usuarioActualizado = usuarioExistente.toBuilder()
-                .nombre(request.nombre())
-                .icono(request.icono())
-                // El email, password y rol NO se tocan aquí
-                .build();
-
-        return usuarioRepository.save(usuarioActualizado);
+        Usuario saved = usuarioRepository.save(usuario);
+        return new UsuarioResponse(saved.getId(), saved.getNombre(), saved.getEmail(), saved.getIcono());
     }
 
     @Transactional(readOnly = true)
@@ -99,6 +105,37 @@ public class UsuarioService {
         return usuarioRepository.findByRol(rol)
                 .stream()
                 .map(u -> new UsuarioResponse(u.getId(), u.getNombre(), u.getEmail(), u.getIcono()))
+                .toList();
+    }
+
+    public PublicacionResponse agregarFavorito(Long publicacionId, Usuario usuario) {
+        Usuario attachedUsuario = usuarioRepository.findById(usuario.getId())
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
+        Publicacion publicacion = publicacionRepository.findById(publicacionId)
+                .orElseThrow(() -> new EntityNotFoundException("Publicacion no encontrada"));
+
+        attachedUsuario.getFavoritos().add(publicacion);
+        usuarioRepository.save(attachedUsuario);
+        return publicacionService.mapToResponse(publicacion, true);
+    }
+
+    public void eliminarFavorito(Long publicacionId, Usuario usuario) {
+        Usuario attachedUsuario = usuarioRepository.findById(usuario.getId())
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
+        Publicacion publicacion = publicacionRepository.findById(publicacionId)
+                .orElseThrow(() -> new EntityNotFoundException("Publicacion no encontrada"));
+
+        attachedUsuario.getFavoritos().remove(publicacion);
+        usuarioRepository.save(attachedUsuario);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PublicacionResponse> obtenerFavoritos(Usuario usuario) {
+        Usuario attachedUsuario = usuarioRepository.findById(usuario.getId())
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
+
+        return attachedUsuario.getFavoritos().stream()
+                .map(p -> publicacionService.mapToResponse(p, true))
                 .toList();
     }
 }

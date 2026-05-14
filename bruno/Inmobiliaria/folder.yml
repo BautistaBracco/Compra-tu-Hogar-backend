@@ -1,0 +1,9 @@
+info:
+  name: Inmobiliaria
+  type: folder
+  seq: 4
+
+request:
+  auth:
+    type: bearer
+    token: "{{my_token}}"

@@ -1,0 +1,9 @@
+info:
+  name: Comprador
+  type: folder
+  seq: 5
+
+request:
+  auth:
+    type: bearer
+    token: "{{my_token}}"

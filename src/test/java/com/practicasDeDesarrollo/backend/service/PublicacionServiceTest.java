@@ -2,6 +2,7 @@ package com.practicasDeDesarrollo.backend.service;
 
 import com.practicasDeDesarrollo.backend.dto.request.CreatePropiedadRequest;
 import com.practicasDeDesarrollo.backend.dto.request.CreatePublicacionRequest;
+import com.practicasDeDesarrollo.backend.dto.request.PublicacionSearchParams;
 import com.practicasDeDesarrollo.backend.dto.request.UpdatePublicacionRequest;
 import com.practicasDeDesarrollo.backend.dto.response.PublicacionResponse;
 import com.practicasDeDesarrollo.backend.entity.Publicacion;
@@ -182,7 +183,7 @@ class PublicacionServiceTest {
         publicacionService.createPublicacion(pubReq3, inmobiliariaIntrusa);
 
         // Act
-        List<PublicacionResponse> mine = publicacionService.buscarPublicaciones(
+        List<PublicacionResponse> mine = publicacionService.buscarPublicaciones(new PublicacionSearchParams(
                 false,
                 null,
                 null,
@@ -192,7 +193,7 @@ class PublicacionServiceTest {
                 null,
                 inmobiliariaPersistida.getId(),
                 null
-        );
+        ), adminPersistido);
 
         // Assert
         assertEquals(2, mine.size());
@@ -227,7 +228,7 @@ class PublicacionServiceTest {
         ), inmobiliariaPersistida);
 
         // Act: pedimos match ALL [1,2]
-        List<PublicacionResponse> res = publicacionService.buscarPublicaciones(
+        List<PublicacionResponse> res = publicacionService.buscarPublicaciones(new PublicacionSearchParams(
                 false,
                 null,
                 null,
@@ -237,7 +238,7 @@ class PublicacionServiceTest {
                 null,
                 null,
                 List.of(1L, 2L)
-        );
+        ), adminPersistido);
 
         // Assert: solo la que tiene ambas
         assertEquals(1, res.size());

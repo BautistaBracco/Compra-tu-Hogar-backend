@@ -1,0 +1,25 @@
+info:
+  name: Actualizar usuario
+  type: http
+  seq: 7
+
+http:
+  method: PATCH
+  url: "{{BASE_URL}}/usuarios/perfil"
+  headers:
+    - name: Authorization
+      value: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJiYXV0aUBnbWFpbC5jb20iLCJpZCI6MSwicm9sZSI6IlJPTEVfQ09NUFJBRE9SIiwiaWF0IjoxNzc2OTY5NzU3LCJleHAiOjE3NzY5NzMzNTd9.MldfYwaniJtu_bp9BbhSMMrZgSx8b7RCkLZTeaVWTQg
+  body:
+    type: json
+    data: |-
+      {
+        "nombre": "juancito",
+        "icono": "http://url.png"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

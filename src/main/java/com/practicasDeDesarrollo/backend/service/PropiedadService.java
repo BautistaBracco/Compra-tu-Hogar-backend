@@ -4,6 +4,7 @@ import com.practicasDeDesarrollo.backend.dto.request.CreatePropiedadRequest;
 import com.practicasDeDesarrollo.backend.dto.response.PropiedadResponse;
 import com.practicasDeDesarrollo.backend.entity.Caracteristica;
 import com.practicasDeDesarrollo.backend.entity.Propiedad;
+import com.practicasDeDesarrollo.backend.entity.Usuario;
 import com.practicasDeDesarrollo.backend.exception.ConflictException;
 import com.practicasDeDesarrollo.backend.repository.CaracteristicaRepository;
 import com.practicasDeDesarrollo.backend.repository.PropiedadRepository;
@@ -98,8 +99,7 @@ public class PropiedadService {
 
 
     @Transactional()
-    public Optional<PropiedadResponse> buscarPorUbicacion(String ubicacion, String piso, String depto) {
-
+    public Optional<PropiedadResponse> buscarPorUbicacion(String ubicacion, String piso, String depto, Usuario usuario) {
         String ubicacionNorm = normRequired(ubicacion);
         String pisoNorm = normOptional(piso);
         String deptoNorm = normOptional(depto);
@@ -108,26 +108,28 @@ public class PropiedadService {
                 ubicacionNorm, pisoNorm, deptoNorm
         );
 
-        return propiedadOptional.map(propiedad -> {
-            Set<String> nombresCaracteristicas = propiedad.getCaracteristicas()
-                    .stream()
-                    .map(Caracteristica::getNombre)
-                    .collect(Collectors.toSet());
+        return propiedadOptional.map(propiedad -> mapToResponse(propiedad, usuario));
+    }
 
-            return new PropiedadResponse(
-                    propiedad.getId(),
-                    propiedad.getUbicacion(),
-                    propiedad.getPiso(),
-                    propiedad.getDepto(),
-                    propiedad.getTipo(),
-                    propiedad.getSuperficie(),
-                    propiedad.getAmbientes(),
-                    propiedad.getSanitarios(),
-                    propiedad.getExpensas(),
-                    propiedad.getVendida(),
-                    nombresCaracteristicas
-            );
-        });
+    public PropiedadResponse mapToResponse(Propiedad propiedad, Usuario usuario) {
+        Set<String> nombresCaracteristicas = propiedad.getCaracteristicas()
+                .stream()
+                .map(Caracteristica::getNombre)
+                .collect(Collectors.toSet());
+
+        return new PropiedadResponse(
+                propiedad.getId(),
+                propiedad.getUbicacion(),
+                propiedad.getPiso(),
+                propiedad.getDepto(),
+                propiedad.getTipo(),
+                propiedad.getSuperficie(),
+                propiedad.getAmbientes(),
+                propiedad.getSanitarios(),
+                propiedad.getExpensas(),
+                propiedad.getVendida(),
+                nombresCaracteristicas
+        );
     }
 
 

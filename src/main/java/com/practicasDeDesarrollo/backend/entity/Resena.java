@@ -36,6 +36,6 @@ public class Resena extends Auditable {
 
     @NotNull
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "propiedad_id", nullable = false)
-    private Propiedad propiedad;
+    @JoinColumn(name = "publicacion_id", nullable = false)
+    private Publicacion publicacion;
 }

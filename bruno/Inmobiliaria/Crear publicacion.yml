@@ -1,0 +1,37 @@
+info:
+  name: Crear publicacion
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{BASE_URL}}/inmobiliaria/publicacion"
+  body:
+    type: json
+    data: |-
+      {
+        "descripcion": "Departamento amplio y luminoso en excelente ubicación",
+        "precio": 120000.50,
+        "imagenes": [
+          "https://example.com/img1.jpg",
+          "https://example.com/img2.jpg"
+        ],
+        "propiedad": {
+          "tipo": "DEPTO",
+          "ubicacion": "Av. Corrientes 123456, CABA",
+          "piso": "4",
+          "depto": "A",
+          "superficie": 65,
+          "ambientes": 3,
+          "sanitarios": 1,
+          "expensas": 15000,
+          "caracteristicaIds":[1,2]
+        }
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

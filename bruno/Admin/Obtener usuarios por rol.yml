@@ -1,0 +1,19 @@
+info:
+  name: Obtener usuarios por rol
+  type: http
+  seq: 3
+
+http:
+  method: GET
+  url: "{{BASE_URL}}/admin/usuarios?rol=INMOBILIARIA"
+  params:
+    - name: rol
+      value: INMOBILIARIA
+      type: query
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
