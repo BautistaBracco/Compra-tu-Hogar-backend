@@ -1,12 +1,12 @@
 package com.practicasDeDesarrollo.backend.controller;
 
 import com.practicasDeDesarrollo.backend.dto.request.UpdateUsuarioRequest;
+import com.practicasDeDesarrollo.backend.dto.request.PublicacionSearchParams;
 import com.practicasDeDesarrollo.backend.dto.response.CaracteristicaResponse;
 import com.practicasDeDesarrollo.backend.dto.response.PropiedadResponse;
 import com.practicasDeDesarrollo.backend.dto.response.PublicacionResponse;
 import com.practicasDeDesarrollo.backend.dto.response.UsuarioResponse;
 import com.practicasDeDesarrollo.backend.entity.Usuario;
-import com.practicasDeDesarrollo.backend.entity.enums.TipoPropiedad;
 import com.practicasDeDesarrollo.backend.service.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +15,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.math.BigDecimal;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -51,9 +50,9 @@ public class UsuarioController {
     public ResponseEntity<PropiedadResponse> obtenerPropiedadPorUbicacion(
             @PathVariable String direccion,
             @RequestParam(required = false) String piso,
-            @RequestParam(required = false) String depto) {
-
-        return propiedadService.buscarPorUbicacion(direccion, piso, depto)
+            @RequestParam(required = false) String depto,
+            @AuthenticationPrincipal Usuario usuario) {
+        return propiedadService.buscarPorUbicacion(direccion, piso, depto, usuario)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -65,27 +64,10 @@ public class UsuarioController {
 
     @GetMapping("/publicaciones")
     public ResponseEntity<List<PublicacionResponse>> buscarPublicaciones(
-            @RequestParam(required = false) Boolean vendida,
-            @RequestParam(required = false) TipoPropiedad tipo,
-            @RequestParam(required = false) BigDecimal minPrecio,
-            @RequestParam(required = false) BigDecimal maxPrecio,
-            @RequestParam(required = false) String ubicacion,
-            @RequestParam(required = false) Integer ambientesMin,
-            @RequestParam(required = false) Integer ambientesMax,
-            @RequestParam(required = false) Long inmobiliariaId,
-            @RequestParam(required = false) List<Long> caracteristicaIds
+            @ModelAttribute PublicacionSearchParams params,
+            @AuthenticationPrincipal Usuario usuario
     ) {
-        return ResponseEntity.ok(publicacionService.buscarPublicaciones(
-                vendida,
-                tipo,
-                minPrecio,
-                maxPrecio,
-                ubicacion,
-                ambientesMin,
-                ambientesMax,
-                inmobiliariaId,
-                caracteristicaIds
-        ));
+        return ResponseEntity.ok(publicacionService.buscarPublicaciones(params, usuario));
     }
 
 }

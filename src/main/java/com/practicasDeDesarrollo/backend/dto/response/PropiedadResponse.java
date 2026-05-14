@@ -15,6 +15,7 @@ public record PropiedadResponse(
         Integer sanitarios,
         Integer expensas,
         Boolean vendida,
-        Set<String> caracteristicas
+        Set<String> caracteristicas,
+        Boolean esFavorito
 ) {
 }

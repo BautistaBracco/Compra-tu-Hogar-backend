@@ -2,6 +2,7 @@ package com.practicasDeDesarrollo.backend.service;
 
 import com.practicasDeDesarrollo.backend.dto.request.CreatePropiedadRequest;
 import com.practicasDeDesarrollo.backend.dto.request.CreatePublicacionRequest;
+import com.practicasDeDesarrollo.backend.dto.request.PublicacionSearchParams;
 import com.practicasDeDesarrollo.backend.dto.request.UpdatePublicacionRequest;
 import com.practicasDeDesarrollo.backend.dto.response.PublicacionResponse;
 import com.practicasDeDesarrollo.backend.entity.Publicacion;
@@ -40,6 +41,7 @@ class PublicacionServiceTest {
     private Usuario inmobiliariaPersistida;
     private Usuario inmobiliariaIntrusa;
     private Usuario adminPersistido;
+    private Usuario compradorPersistido;
 
     @BeforeEach
     void setUp() {
@@ -69,6 +71,15 @@ class PublicacionServiceTest {
                 .rol(RolUsuario.ADMIN)
                 .build();
         adminPersistido = usuarioRepository.save(admin);
+
+        // Usuario Comprador (para favoritos)
+        Usuario comprador = Usuario.builder()
+                .nombre("Comprador Test")
+                .email("comprador@test.com")
+                .password("pass")
+                .rol(RolUsuario.COMPRADOR)
+                .build();
+        compradorPersistido = usuarioRepository.save(comprador);
     }
 
     // Método auxiliar para no repetir código en los tests
@@ -182,7 +193,7 @@ class PublicacionServiceTest {
         publicacionService.createPublicacion(pubReq3, inmobiliariaIntrusa);
 
         // Act
-        List<PublicacionResponse> mine = publicacionService.buscarPublicaciones(
+        List<PublicacionResponse> mine = publicacionService.buscarPublicaciones(new PublicacionSearchParams(
                 false,
                 null,
                 null,
@@ -192,7 +203,7 @@ class PublicacionServiceTest {
                 null,
                 inmobiliariaPersistida.getId(),
                 null
-        );
+        ), inmobiliariaPersistida);
 
         // Assert
         assertEquals(2, mine.size());
@@ -227,7 +238,7 @@ class PublicacionServiceTest {
         ), inmobiliariaPersistida);
 
         // Act: pedimos match ALL [1,2]
-        List<PublicacionResponse> res = publicacionService.buscarPublicaciones(
+        List<PublicacionResponse> res = publicacionService.buscarPublicaciones(new PublicacionSearchParams(
                 false,
                 null,
                 null,
@@ -237,11 +248,46 @@ class PublicacionServiceTest {
                 null,
                 null,
                 List.of(1L, 2L)
-        );
+        ), inmobiliariaPersistida);
 
         // Assert: solo la que tiene ambas
         assertEquals(1, res.size());
         assertEquals("Con ambas", res.get(0).descripcion());
+    }
+
+    @Test
+    void buscarPublicaciones_deberiaMarcarEsFavoritoSegunPropiedadDelUsuario() {
+        // Arrange: publicacion con propiedad
+        PublicacionResponse creada = crearPublicacionBase();
+        Publicacion pubEnDb = publicacionRepository.findById(creada.id()).orElseThrow();
+
+        // Marcamos la propiedad como favorita para el comprador
+        compradorPersistido.getFavoritos().add(pubEnDb.getPropiedad());
+        usuarioRepository.saveAndFlush(compradorPersistido);
+
+        // Act
+        List<PublicacionResponse> res = publicacionService.buscarPublicaciones(
+                new PublicacionSearchParams(
+                        false,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
+                ),
+                compradorPersistido
+        );
+
+        // Assert
+        PublicacionResponse found = res.stream()
+                .filter(p -> p.id().equals(creada.id()))
+                .findFirst()
+                .orElseThrow();
+
+        assertTrue(found.propiedad().esFavorito());
     }
 
     // ==========================================

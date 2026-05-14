@@ -4,9 +4,12 @@ import com.practicasDeDesarrollo.backend.dto.response.AuthResponse;
 import com.practicasDeDesarrollo.backend.dto.request.CreateUsuarioRequest;
 import com.practicasDeDesarrollo.backend.dto.request.UpdateUsuarioRequest;
 import com.practicasDeDesarrollo.backend.dto.response.UsuarioResponse;
+import com.practicasDeDesarrollo.backend.dto.response.PropiedadResponse;
+import com.practicasDeDesarrollo.backend.entity.Propiedad;
 import com.practicasDeDesarrollo.backend.entity.Usuario;
 import com.practicasDeDesarrollo.backend.entity.enums.RolUsuario;
 import com.practicasDeDesarrollo.backend.repository.UsuarioRepository;
+import com.practicasDeDesarrollo.backend.repository.PropiedadRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
@@ -18,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +29,8 @@ import java.util.List;
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final PropiedadRepository propiedadRepository;
+    private final PropiedadService propiedadService;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
@@ -99,5 +105,28 @@ public class UsuarioService {
                 .stream()
                 .map(u -> new UsuarioResponse(u.getId(), u.getNombre(), u.getEmail(), u.getIcono()))
                 .toList();
+    }
+
+    public PropiedadResponse agregarFavorito(Long propiedadId, Usuario usuario) {
+        Propiedad propiedad = propiedadRepository.findById(propiedadId)
+                .orElseThrow(() -> new EntityNotFoundException("Propiedad no encontrada"));
+        
+        usuario.getFavoritos().add(propiedad);
+        usuarioRepository.save(usuario);
+        return propiedadService.mapToResponse(propiedad, usuario);
+    }
+
+    public void eliminarFavorito(Long propiedadId, Usuario usuario) {
+        Propiedad propiedad = propiedadRepository.findById(propiedadId)
+                .orElseThrow(() -> new EntityNotFoundException("Propiedad no encontrada"));
+        
+        usuario.getFavoritos().remove(propiedad);
+        usuarioRepository.save(usuario);
+    }
+
+    public List<PropiedadResponse> obtenerFavoritos(Usuario usuario) {
+        return usuario.getFavoritos().stream()
+                .map(propiedad -> propiedadService.mapToResponse(propiedad, usuario))
+                .collect(Collectors.toList());
     }
 }
