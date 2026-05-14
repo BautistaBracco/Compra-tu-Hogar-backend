@@ -48,10 +48,10 @@ public class Usuario extends Auditable implements UserDetails {
     @JoinTable(
             name = "favoritos",
             joinColumns = @JoinColumn(name = "usuario_id"),
-            inverseJoinColumns = @JoinColumn(name = "propiedad_id")
+            inverseJoinColumns = @JoinColumn(name = "publicacion_id")
     )
     @Builder.Default
-    private Set<Propiedad> favoritos = new HashSet<>();
+    private Set<Publicacion> favoritos = new HashSet<>();
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

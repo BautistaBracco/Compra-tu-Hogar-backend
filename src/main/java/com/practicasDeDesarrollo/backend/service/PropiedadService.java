@@ -117,25 +117,6 @@ public class PropiedadService {
                 .map(Caracteristica::getNombre)
                 .collect(Collectors.toSet());
 
-        boolean esFavorito = usuario != null
-                && usuario.getFavoritos() != null
-                && usuario.getFavoritos().contains(propiedad);
-
-        return mapToResponse(propiedad, nombresCaracteristicas, esFavorito);
-
-    }
-
-    public PropiedadResponse mapToResponse(Propiedad propiedad, boolean esFavorito) {
-        Set<String> nombresCaracteristicas = propiedad.getCaracteristicas()
-                .stream()
-                .map(Caracteristica::getNombre)
-                .collect(Collectors.toSet());
-
-        return mapToResponse(propiedad, nombresCaracteristicas, esFavorito);
-    }
-
-    private static PropiedadResponse mapToResponse(Propiedad propiedad, Set<String> nombresCaracteristicas, boolean esFavorito) {
-
         return new PropiedadResponse(
                 propiedad.getId(),
                 propiedad.getUbicacion(),
@@ -147,8 +128,7 @@ public class PropiedadService {
                 propiedad.getSanitarios(),
                 propiedad.getExpensas(),
                 propiedad.getVendida(),
-                nombresCaracteristicas,
-                esFavorito
+                nombresCaracteristicas
         );
     }
 

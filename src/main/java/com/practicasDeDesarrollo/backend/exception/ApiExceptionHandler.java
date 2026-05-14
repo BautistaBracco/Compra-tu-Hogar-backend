@@ -205,6 +205,7 @@ public class ApiExceptionHandler {
             Exception ex,
             HttpServletRequest request
     ) {
+        ex.printStackTrace(); // trace completo en consola
         ApiError error = buildError(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 ErrorCode.INTERNAL_ERROR,

@@ -10,9 +10,6 @@ public record CreateResenaRequest(
         @Max(10)
         Integer puntaje,
 
-        String comentario,
-
-        @NotNull
-        Long propiedadId
+        String comentario
 ) {
 }

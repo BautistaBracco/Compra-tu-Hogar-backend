@@ -1,0 +1,20 @@
+info:
+  name: Agregar favorito
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{BASE_URL}}/comprador/favoritos/{{publicacionId}}"
+  auth: inherit
+
+runtime:
+  variables:
+    - name: publicacionId
+      value: "1"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

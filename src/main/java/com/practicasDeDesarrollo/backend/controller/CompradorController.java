@@ -1,7 +1,7 @@
 package com.practicasDeDesarrollo.backend.controller;
 
 import com.practicasDeDesarrollo.backend.dto.request.CreateResenaRequest;
-import com.practicasDeDesarrollo.backend.dto.response.PropiedadResponse;
+import com.practicasDeDesarrollo.backend.dto.response.PublicacionResponse;
 import com.practicasDeDesarrollo.backend.dto.response.ResenaResponse;
 import com.practicasDeDesarrollo.backend.entity.Usuario;
 import com.practicasDeDesarrollo.backend.service.ResenaService;
@@ -23,31 +23,31 @@ public class CompradorController {
     private final ResenaService resenaService;
 
     @GetMapping("/favoritos")
-    public ResponseEntity<List<PropiedadResponse>> listarFavoritos(
+    public ResponseEntity<List<PublicacionResponse>> listarFavoritos(
             @AuthenticationPrincipal Usuario usuario) {
         return ResponseEntity.ok(usuarioService.obtenerFavoritos(usuario));
     }
 
-    @PostMapping("/favoritos/{propiedadId}")
-    public ResponseEntity<PropiedadResponse> agregarFavorito(
-            @PathVariable Long propiedadId,
+    @PostMapping("/favoritos/{publicacionId}")
+    public ResponseEntity<PublicacionResponse> agregarFavorito(
+            @PathVariable Long publicacionId,
             @AuthenticationPrincipal Usuario usuario) {
-        return ResponseEntity.ok(usuarioService.agregarFavorito(propiedadId, usuario));
+        return ResponseEntity.ok(usuarioService.agregarFavorito(publicacionId, usuario));
     }
 
-    @DeleteMapping("/favoritos/{propiedadId}")
+    @DeleteMapping("/favoritos/{publicacionId}")
     public ResponseEntity<Void> eliminarFavorito(
-            @PathVariable Long propiedadId,
+            @PathVariable Long publicacionId,
             @AuthenticationPrincipal Usuario usuario) {
-        usuarioService.eliminarFavorito(propiedadId, usuario);
+        usuarioService.eliminarFavorito(publicacionId, usuario);
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/reseñas")
+    @PostMapping("/reseñas/{publicacionId}")
     public ResponseEntity<ResenaResponse> agregarResena(
+            @PathVariable Long publicacionId,
             @Valid @RequestBody CreateResenaRequest request,
             @AuthenticationPrincipal Usuario usuario) {
-        return ResponseEntity.ok(resenaService.agregarResena(request, usuario));
+        return ResponseEntity.ok(resenaService.agregarResena(publicacionId, request, usuario));
     }
 }
-

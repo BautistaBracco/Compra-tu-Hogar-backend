@@ -25,7 +25,7 @@ http:
           "ambientes": 3,
           "sanitarios": 1,
           "expensas": 15000,
-          "caracteristicaIds":[1,2,3]
+          "caracteristicaIds":[1,2]
         }
       }
   auth: inherit

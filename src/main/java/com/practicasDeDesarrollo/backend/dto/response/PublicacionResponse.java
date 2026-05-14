@@ -9,6 +9,7 @@ public record PublicacionResponse(
         String descripcion,
         BigDecimal precio,
         List<String> imagenes,
+        Boolean esFavorito,
         UsuarioResponse inmobiliaria,
         PropiedadResponse propiedad
 ) {

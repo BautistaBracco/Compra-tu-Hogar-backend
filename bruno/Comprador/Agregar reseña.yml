@@ -1,0 +1,27 @@
+info:
+  name: Agregar reseña
+  type: http
+  seq: 4
+
+http:
+  method: POST
+  url: "{{BASE_URL}}/comprador/reseñas/{{publicacionId}}"
+  body:
+    type: json
+    data: |-
+      {
+        "puntaje": 10,
+        "comentario": "es excelente"
+      }
+  auth: inherit
+
+runtime:
+  variables:
+    - name: publicacionId
+      value: "1"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -5,6 +5,6 @@ public record ResenaResponse(
         Integer puntaje,
         String comentario,
         Long autorId,
-        Long propiedadId
+        Long publicacionId
 ) {
 }
