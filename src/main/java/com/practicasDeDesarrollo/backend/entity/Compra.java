@@ -23,7 +23,7 @@ public class Compra extends Auditable {
 
     @NotNull
     @DecimalMin(value = "0.01")
-    @Column(nullable = false, precision = 19, scale = 2) // Mejorada la precisión
+    @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal precioCompra;
 
     @NotNull

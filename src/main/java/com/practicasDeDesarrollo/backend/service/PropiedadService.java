@@ -6,6 +6,7 @@ import com.practicasDeDesarrollo.backend.entity.Caracteristica;
 import com.practicasDeDesarrollo.backend.entity.Propiedad;
 import com.practicasDeDesarrollo.backend.entity.Usuario;
 import com.practicasDeDesarrollo.backend.exception.ConflictException;
+import com.practicasDeDesarrollo.backend.mapper.PropiedadMapper;
 import com.practicasDeDesarrollo.backend.repository.CaracteristicaRepository;
 import com.practicasDeDesarrollo.backend.repository.PropiedadRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 public class PropiedadService {
     private final PropiedadRepository propiedadRepository;
     private final CaracteristicaRepository caracteristicaRepository;
+    private final PropiedadMapper propiedadMapper;
 
     private static String normRequired(String value) {
         return value.trim().toUpperCase(Locale.ROOT);
@@ -108,28 +110,7 @@ public class PropiedadService {
                 ubicacionNorm, pisoNorm, deptoNorm
         );
 
-        return propiedadOptional.map(propiedad -> mapToResponse(propiedad, usuario));
-    }
-
-    public PropiedadResponse mapToResponse(Propiedad propiedad, Usuario usuario) {
-        Set<String> nombresCaracteristicas = propiedad.getCaracteristicas()
-                .stream()
-                .map(Caracteristica::getNombre)
-                .collect(Collectors.toSet());
-
-        return new PropiedadResponse(
-                propiedad.getId(),
-                propiedad.getUbicacion(),
-                propiedad.getPiso(),
-                propiedad.getDepto(),
-                propiedad.getTipo(),
-                propiedad.getSuperficie(),
-                propiedad.getAmbientes(),
-                propiedad.getSanitarios(),
-                propiedad.getExpensas(),
-                propiedad.getVendida(),
-                nombresCaracteristicas
-        );
+        return propiedadOptional.map(propiedadMapper::toResponse);
     }
 
 

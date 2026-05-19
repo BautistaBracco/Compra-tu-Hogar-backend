@@ -3,11 +3,10 @@ package com.practicasDeDesarrollo.backend.service;
 import com.practicasDeDesarrollo.backend.dto.request.CreatePublicacionRequest;
 import com.practicasDeDesarrollo.backend.dto.request.PublicacionSearchParams;
 import com.practicasDeDesarrollo.backend.dto.request.UpdatePublicacionRequest;
-import com.practicasDeDesarrollo.backend.dto.response.PropiedadResponse;
 import com.practicasDeDesarrollo.backend.dto.response.PublicacionResponse;
-import com.practicasDeDesarrollo.backend.dto.response.UsuarioResponse;
 import com.practicasDeDesarrollo.backend.entity.*;
 import com.practicasDeDesarrollo.backend.exception.ConflictException;
+import com.practicasDeDesarrollo.backend.mapper.PublicacionMapper;
 import com.practicasDeDesarrollo.backend.repository.PublicacionRepository;
 import com.practicasDeDesarrollo.backend.repository.UsuarioRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -29,6 +28,7 @@ public class PublicacionService {
     private final PublicacionRepository publicacionRepository;
     private final PropiedadService propiedadService;
     private final UsuarioRepository usuarioRepository;
+    private final PublicacionMapper publicacionMapper;
 
     @Transactional(readOnly = true)
     public List<PublicacionResponse> buscarPublicaciones(@NonNull PublicacionSearchParams params, @NonNull Usuario usuario) {
@@ -40,7 +40,7 @@ public class PublicacionService {
         Set<Long> favoritosIds = usuarioRepository.findFavoritoIdsIn(usuario.getId(), idsPublicaciones);
 
         return resultados.stream()
-                .map(p -> mapToResponse(p, favoritosIds.contains(p.getId())))
+                .map(p -> publicacionMapper.toResponse(p, favoritosIds.contains(p.getId())))
                 .toList();
     }
 
@@ -50,7 +50,7 @@ public class PublicacionService {
                 .orElseThrow(() -> new EntityNotFoundException("Publicación no encontrada"));
 
         boolean esFavorito = usuarioRepository.isFavorito(usuario.getId(), id);
-        return mapToResponse(p, esFavorito);
+        return publicacionMapper.toResponse(p, esFavorito);
     }
 
     public PublicacionResponse createPublicacion(@NonNull CreatePublicacionRequest request, Usuario inmobiliaria) {
@@ -68,7 +68,7 @@ public class PublicacionService {
         // Seteo de imágenes con orden
         p.setImagenes(crearListaImagenes(request.imagenes(), p));
 
-        return mapToResponse(publicacionRepository.save(p), false);
+        return publicacionMapper.toResponse(publicacionRepository.save(p), false);
     }
 
     public PublicacionResponse modificarPublicacion(Long id, UpdatePublicacionRequest request, Usuario inmobiliaria) {
@@ -84,7 +84,7 @@ public class PublicacionService {
             actualizarImagenes(p, request.imagenes());
         }
 
-        return mapToResponse(publicacionRepository.save(p), false);
+        return publicacionMapper.toResponse(publicacionRepository.save(p), false);
     }
 
     public void eliminarPublicacion(Long id, @NonNull Usuario inmobiliaria) {
@@ -168,19 +168,5 @@ public class PublicacionService {
         }
     }
 
-    public PublicacionResponse mapToResponse(Publicacion p, boolean esFavorito) {
-        Usuario inmo = p.getInmobiliaria();
-        UsuarioResponse inmoRes = new UsuarioResponse(inmo.getId(), inmo.getNombre(), inmo.getEmail(), inmo.getIcono());
-        PropiedadResponse propRes = propiedadService.mapToResponse(p.getPropiedad(), null);
 
-        return new PublicacionResponse(
-                p.getId(),
-                p.getDescripcion(),
-                p.getPrecio(),
-                p.getImagenes().stream().map(Imagen::getUrl).toList(),
-                esFavorito,
-                inmoRes,
-                propRes
-        );
-    }
 }
