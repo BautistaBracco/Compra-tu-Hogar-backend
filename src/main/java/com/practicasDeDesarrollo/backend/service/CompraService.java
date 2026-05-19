@@ -72,4 +72,18 @@ public class CompraService {
 
         publicacionRepository.save(publicacion);
     }
+
+    public List<CompraResponse> obtenerCompras(Usuario usuario) {
+        List<Compra> compras = compraRepository.findByComprador(usuario);
+        return compras.stream()
+                .map(compra -> new CompraResponse(
+                        compra.getId(),
+                        compra.getPrecioCompra(),
+                        compra.getCreadoEn(),
+                        usuarioMapper.toResponse(compra.getComprador()),
+                        publicacionMapper.toResponse(compra.getPublicacion(), false)
+                ))
+                .toList();
+
+    }
 }

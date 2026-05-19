@@ -1,0 +1,15 @@
+info:
+  name: Obtener Clientes
+  type: http
+  seq: 5
+
+http:
+  method: GET
+  url: "{{BASE_URL}}/inmobiliaria/clientes"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public record CompraResponse(
-        Long idCompra,
+        Long id,
         BigDecimal precioFinal,
         LocalDateTime fechaCompra,
         UsuarioResponse comprador,

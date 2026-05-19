@@ -5,8 +5,13 @@ info:
 
 http:
   method: POST
-  url: "{{BASE_URL}}/comprar/{{publicacionID}}"
+  url: "{{BASE_URL}}/comprador/comprar/{{publicacionID}}"
   auth: inherit
+
+runtime:
+  variables:
+    - name: publicacionID
+      value: "1"
 
 settings:
   encodeUrl: true

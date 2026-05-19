@@ -17,10 +17,8 @@ http:
           "https://example.com/img2.jpg"
         ],
         "propiedad": {
-          "tipo": "DEPTO",
-          "ubicacion": "Av. Corrientes 123456, CABA",
-          "piso": "4",
-          "depto": "A",
+          "tipo": "CASA",
+          "ubicacion": "Av. Corrientes 12, CABA",
           "superficie": 65,
           "ambientes": 3,
           "sanitarios": 1,

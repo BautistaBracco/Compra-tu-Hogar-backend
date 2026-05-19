@@ -10,5 +10,6 @@ import java.util.List;
 @Repository
 public interface CompraRepository extends JpaRepository<Compra, Long> {
     List<Compra> findByPublicacionInmobiliaria(Usuario inmobiliaria);
+    List<Compra> findByComprador(Usuario comprador);
 
 }
