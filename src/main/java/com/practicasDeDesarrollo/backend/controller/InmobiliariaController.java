@@ -43,6 +43,11 @@ public class InmobiliariaController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/publicacion")
+    public ResponseEntity<List<PublicacionResponse>> listarPublicaciones(@AuthenticationPrincipal Usuario usuario) {
+        return ResponseEntity.ok(publicacionService.listarPublicaciones(usuario));
+    }
+
     @GetMapping("/ventas")
     public ResponseEntity<List<CompraResponse>> obtenerVentas(@AuthenticationPrincipal Usuario usuario) {
         return ResponseEntity.ok(compraService.obtenerVentas(usuario));
