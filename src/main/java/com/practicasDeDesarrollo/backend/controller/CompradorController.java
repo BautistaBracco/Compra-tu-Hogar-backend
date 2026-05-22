@@ -1,9 +1,11 @@
 package com.practicasDeDesarrollo.backend.controller;
 
 import com.practicasDeDesarrollo.backend.dto.request.CreateResenaRequest;
+import com.practicasDeDesarrollo.backend.dto.response.CompraResponse;
 import com.practicasDeDesarrollo.backend.dto.response.PublicacionResponse;
 import com.practicasDeDesarrollo.backend.dto.response.ResenaResponse;
 import com.practicasDeDesarrollo.backend.entity.Usuario;
+import com.practicasDeDesarrollo.backend.service.CompraService;
 import com.practicasDeDesarrollo.backend.service.ResenaService;
 import com.practicasDeDesarrollo.backend.service.UsuarioService;
 import jakarta.validation.Valid;
@@ -21,6 +23,7 @@ public class CompradorController {
 
     private final UsuarioService usuarioService;
     private final ResenaService resenaService;
+    private final CompraService compraService;
 
     @GetMapping("/favoritos")
     public ResponseEntity<List<PublicacionResponse>> listarFavoritos(
@@ -49,5 +52,19 @@ public class CompradorController {
             @Valid @RequestBody CreateResenaRequest request,
             @AuthenticationPrincipal Usuario usuario) {
         return ResponseEntity.ok(resenaService.agregarResena(publicacionId, request, usuario));
+    }
+
+    @PostMapping("/comprar/{publicacionId}")
+    public ResponseEntity<Void> comprarInmueble(
+            @PathVariable Long publicacionId,
+            @AuthenticationPrincipal Usuario usuario) {
+        compraService.comprar(publicacionId, usuario);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/compras")
+    public ResponseEntity<List<CompraResponse>> listarCompras(
+            @AuthenticationPrincipal Usuario usuario) {
+        return ResponseEntity.ok(compraService.obtenerCompras(usuario));
     }
 }

@@ -1,0 +1,20 @@
+info:
+  name: Comprar propiedad
+  type: http
+  seq: 5
+
+http:
+  method: POST
+  url: "{{BASE_URL}}/comprador/comprar/{{publicacionID}}"
+  auth: inherit
+
+runtime:
+  variables:
+    - name: publicacionID
+      value: "1"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
