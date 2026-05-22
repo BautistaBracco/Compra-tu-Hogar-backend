@@ -37,7 +37,7 @@ public class CompraService {
                         compra.getPrecioCompra(),
                         compra.getCreadoEn(),
                         usuarioMapper.toResponse(compra.getComprador()),
-                        publicacionMapper.toResponse(compra.getPublicacion(), false)
+                        publicacionMapper.toResponse(compra.getPublicacion())
                 ))
                 .toList();
     }
@@ -81,7 +81,7 @@ public class CompraService {
                         compra.getPrecioCompra(),
                         compra.getCreadoEn(),
                         usuarioMapper.toResponse(compra.getComprador()),
-                        publicacionMapper.toResponse(compra.getPublicacion(), false)
+                        publicacionMapper.toResponse(compra.getPublicacion())
                 ))
                 .toList();
 
