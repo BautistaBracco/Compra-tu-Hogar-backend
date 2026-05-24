@@ -46,12 +46,20 @@ public class ResenaService {
 
     }
 
+    public void eliminarResenaPorPublicacion(Long publicacionId, Usuario usuario) {
+        Resena resena = resenaRepository.findByPublicacionIdAndAutorId(publicacionId, usuario.getId())
+                .orElseThrow(() -> new EntityNotFoundException("Reseña no encontrada"));
+
+        resenaRepository.delete(resena);
+    }
+
     private ResenaResponse mapToResponse(Resena resena) {
         return new ResenaResponse(
                 resena.getId(),
                 resena.getPuntaje(),
                 resena.getComentario(),
                 resena.getAutor().getId(),
+                resena.getAutor().getNombre(),
                 resena.getPublicacion().getId()
         );
     }

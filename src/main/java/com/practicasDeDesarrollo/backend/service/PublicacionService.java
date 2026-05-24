@@ -98,20 +98,19 @@ public class PublicacionService {
     // --- MÉTODOS PRIVADOS DE SOPORTE ---
 
     private List<Publicacion> ejecutarBusquedaFiltrada(PublicacionSearchParams params) {
-        boolean vendida = params.vendida() != null && params.vendida();
         List<Long> caracs = (params.caracteristicaIds() == null)
                 ? List.of()
                 : params.caracteristicaIds().stream().distinct().toList();
 
         if (caracs.isEmpty()) {
             return publicacionRepository.search(
-                    vendida, params.tipo(), params.minPrecio(), params.maxPrecio(),
+                    params.vendida(), params.tipo(), params.minPrecio(), params.maxPrecio(),
                     params.ubicacion(), params.ambientesMin(), params.ambientesMax(), params.inmobiliariaId()
             );
         }
 
         return publicacionRepository.searchMatchAllCaracteristicas(
-                vendida, params.tipo(), params.minPrecio(), params.maxPrecio(),
+                params.vendida(), params.tipo(), params.minPrecio(), params.maxPrecio(),
                 params.ubicacion(), params.ambientesMin(), params.ambientesMax(),
                 params.inmobiliariaId(), caracs, caracs.size()
         );

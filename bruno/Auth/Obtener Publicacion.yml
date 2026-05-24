@@ -6,6 +6,11 @@ info:
 http:
   method: GET
   url: "{{BASE_URL}}/usuarios/publicacion/{{publicacionID}}"
+  params:
+    - name: id
+      value: "3"
+      type: query
+      disabled: true
   auth: inherit
 
 runtime:

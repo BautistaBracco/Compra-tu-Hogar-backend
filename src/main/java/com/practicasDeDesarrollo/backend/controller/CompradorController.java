@@ -54,6 +54,14 @@ public class CompradorController {
         return ResponseEntity.ok(resenaService.agregarResena(publicacionId, request, usuario));
     }
 
+    @DeleteMapping("/reseñas/{publicacionId}")
+    public ResponseEntity<Void> eliminarResena(
+            @PathVariable Long publicacionId,
+            @AuthenticationPrincipal Usuario usuario) {
+        resenaService.eliminarResenaPorPublicacion(publicacionId, usuario);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/comprar/{publicacionId}")
     public ResponseEntity<Void> comprarInmueble(
             @PathVariable Long publicacionId,
