@@ -1,10 +1,11 @@
-package com.practicasDeDesarrollo.backend.service;
+package com.practicasDeDesarrollo.backend.integration.service;
 
 import com.practicasDeDesarrollo.backend.dto.request.CreateUsuarioRequest;
 import com.practicasDeDesarrollo.backend.dto.response.AuthResponse;
 import com.practicasDeDesarrollo.backend.entity.Usuario;
 import com.practicasDeDesarrollo.backend.entity.enums.RolUsuario;
 import com.practicasDeDesarrollo.backend.repository.UsuarioRepository;
+import com.practicasDeDesarrollo.backend.service.UsuarioService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

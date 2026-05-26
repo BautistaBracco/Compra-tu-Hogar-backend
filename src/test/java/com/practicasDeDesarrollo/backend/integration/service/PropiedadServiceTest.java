@@ -1,10 +1,11 @@
-package com.practicasDeDesarrollo.backend.service;
+package com.practicasDeDesarrollo.backend.integration.service;
 
 import com.practicasDeDesarrollo.backend.dto.request.CreatePropiedadRequest;
 import com.practicasDeDesarrollo.backend.entity.Propiedad;
 import com.practicasDeDesarrollo.backend.entity.enums.TipoPropiedad;
 import com.practicasDeDesarrollo.backend.exception.ConflictException;
 import com.practicasDeDesarrollo.backend.repository.PropiedadRepository;
+import com.practicasDeDesarrollo.backend.service.PropiedadService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

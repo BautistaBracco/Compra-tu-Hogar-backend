@@ -1,4 +1,4 @@
-package com.practicasDeDesarrollo.backend.service;
+package com.practicasDeDesarrollo.backend.integration.service;
 
 import com.practicasDeDesarrollo.backend.dto.request.CreatePropiedadRequest;
 import com.practicasDeDesarrollo.backend.dto.request.CreatePublicacionRequest;
@@ -12,6 +12,7 @@ import com.practicasDeDesarrollo.backend.entity.enums.TipoPropiedad;
 import com.practicasDeDesarrollo.backend.exception.ConflictException;
 import com.practicasDeDesarrollo.backend.repository.PublicacionRepository;
 import com.practicasDeDesarrollo.backend.repository.UsuarioRepository;
+import com.practicasDeDesarrollo.backend.service.PublicacionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

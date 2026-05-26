@@ -1,8 +1,9 @@
-package com.practicasDeDesarrollo.backend.repository;
+package com.practicasDeDesarrollo.backend.integration.repository;
 
 import com.practicasDeDesarrollo.backend.config.JpaConfig;
 import com.practicasDeDesarrollo.backend.entity.Propiedad;
 import com.practicasDeDesarrollo.backend.entity.enums.TipoPropiedad;
+import com.practicasDeDesarrollo.backend.repository.PropiedadRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

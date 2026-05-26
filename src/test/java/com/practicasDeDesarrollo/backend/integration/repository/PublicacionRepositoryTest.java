@@ -1,4 +1,4 @@
-package com.practicasDeDesarrollo.backend.repository;
+package com.practicasDeDesarrollo.backend.integration.repository;
 
 import com.practicasDeDesarrollo.backend.config.JpaConfig;
 import com.practicasDeDesarrollo.backend.entity.Imagen;
