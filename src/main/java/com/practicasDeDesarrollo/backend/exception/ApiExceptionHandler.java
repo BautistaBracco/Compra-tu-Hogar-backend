@@ -199,6 +199,23 @@ public class ApiExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
 
+    // 🔹 5d. Autorización (no tiene permisos)
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ApiError> handleForbidden(
+            ForbiddenException ex,
+            HttpServletRequest request
+    ) {
+        ApiError error = buildError(
+                HttpStatus.FORBIDDEN,
+                ErrorCode.FORBIDDEN,
+                ex.getMessage(),
+                requestPath(request),
+                null
+        );
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+    }
+
     // 🔹 6. Fallback (500)
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGlobal(

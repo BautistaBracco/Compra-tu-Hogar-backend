@@ -12,6 +12,7 @@ import com.practicasDeDesarrollo.backend.entity.Usuario;
 import com.practicasDeDesarrollo.backend.entity.enums.RolUsuario;
 import com.practicasDeDesarrollo.backend.entity.enums.TipoPropiedad;
 import com.practicasDeDesarrollo.backend.exception.ConflictException;
+import com.practicasDeDesarrollo.backend.exception.ForbiddenException;
 import com.practicasDeDesarrollo.backend.mapper.PublicacionMapper;
 import com.practicasDeDesarrollo.backend.repository.PublicacionRepository;
 import com.practicasDeDesarrollo.backend.repository.UsuarioRepository;
@@ -244,7 +245,7 @@ class PublicacionServiceTest {
         }
 
         @Test
-        @DisplayName("debería lanzar IllegalArgumentException si el usuario no es el dueño")
+        @DisplayName("debería lanzar ForbiddenException si el usuario no es el dueño")
         void deberia_lanzar_excepcion_si_no_es_dueno() {
             Usuario dueno = inmobiliaria(1L);
             Usuario intruso = inmobiliaria(2L);
@@ -252,7 +253,7 @@ class PublicacionServiceTest {
 
             when(publicacionRepository.findById(5L)).thenReturn(Optional.of(pub));
 
-            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            ForbiddenException ex = assertThrows(ForbiddenException.class,
                     () -> publicacionService.modificarPublicacion(5L,
                             new UpdatePublicacionRequest("Hack", BigDecimal.ONE, null),
                             intruso));
@@ -313,7 +314,7 @@ class PublicacionServiceTest {
         }
 
         @Test
-        @DisplayName("debería lanzar IllegalArgumentException y no borrar si el usuario no es dueño")
+        @DisplayName("debería lanzar ForbiddenException y no borrar si el usuario no es dueño")
         void deberia_lanzar_excepcion_y_no_borrar_si_no_es_dueno() {
             Usuario dueno = inmobiliaria(1L);
             Usuario intruso = inmobiliaria(2L);
@@ -321,7 +322,7 @@ class PublicacionServiceTest {
 
             when(publicacionRepository.findById(5L)).thenReturn(Optional.of(pub));
 
-            assertThrows(IllegalArgumentException.class,
+            assertThrows(ForbiddenException.class,
                     () -> publicacionService.eliminarPublicacion(5L, intruso));
 
             verify(publicacionRepository, never()).delete(any());

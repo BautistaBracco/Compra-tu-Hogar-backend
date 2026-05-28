@@ -90,10 +90,11 @@ class CompraIntegrationTest {
     void comprar_persiste_y_marca_vendida() {
         compraService.comprar(publicacionId, comprador);
 
+        // Compra persisted and linked uniquely by publicacion_id.
         assertEquals(1, compraRepository.count());
 
         var pub = publicacionRepository.findById(publicacionId).orElseThrow();
-        assertEquals(Boolean.TRUE, pub.getPropiedad().getVendida());
+        assertTrue(Boolean.TRUE.equals(pub.getPropiedad().getVendida()));
 
         ConflictException ex = assertThrows(ConflictException.class,
                 () -> compraService.comprar(publicacionId, comprador));

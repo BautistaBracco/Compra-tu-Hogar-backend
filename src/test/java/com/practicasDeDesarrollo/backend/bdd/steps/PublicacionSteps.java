@@ -163,8 +163,7 @@ public class PublicacionSteps {
     @Then("debería recibir un error de permisos")
     public void deberia_recibir_un_error_de_permisos() {
         assertNotNull(world.lastResponse);
-        // El handler convierte IllegalArgumentException en 400 (BUSINESS_ERROR)
-        assertEquals(HttpStatus.BAD_REQUEST, world.lastResponse.getStatusCode());
+        assertEquals(HttpStatus.FORBIDDEN, world.lastResponse.getStatusCode());
     }
 
     @When("consulto el listado de publicaciones sin autenticación")

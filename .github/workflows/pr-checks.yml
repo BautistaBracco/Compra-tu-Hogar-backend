@@ -16,7 +16,7 @@ jobs:
       - name: Setup de JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: '21' # Coincide con tu build.gradle
+          java-version: '21'
           distribution: 'temurin'
 
       - name: Setup Gradle
@@ -25,15 +25,15 @@ jobs:
       - name: Permisos para Gradle Wrapper
         run: chmod +x ./gradlew
 
-      # 1. Tests Unitarios (Falla rápido si la lógica base está mal)
+      # 1. Tests Unitarios
       - name: Ejecutar Tests Unitarios
         run: ./gradlew test
 
-      # 2. Tests de Integración (Verifica base de datos y controladores)
+      # 2. Tests de Integración
       - name: Ejecutar Tests de Integración
         run: ./gradlew integration
 
-      # 3. Tests BDD (Verifica flujos completos)
+      # 3. Tests BDD
       - name: Ejecutar Tests BDD
         run: ./gradlew bdd
 
