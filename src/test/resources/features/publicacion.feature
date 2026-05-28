@@ -9,3 +9,7 @@ Feature: Gestión de publicaciones
     Given que existe una publicación de "Quilmes Prop"
     When "Otra Inmobiliaria" intenta modificarla
     Then debería recibir un error de permisos
+
+  Scenario: Buscar publicaciones sin autenticación
+    When consulto el listado de publicaciones sin autenticación
+    Then debería recibir un error de no autenticado

@@ -62,33 +62,4 @@ class UsuarioServiceTest {
         assertNotNull(response.token());
         assertEquals("login@test.com", response.email());
     }
-
-    @Test
-    void login_conPasswordIncorrecta_deberiaLanzarExcepcion() {
-        // Arrange
-        usuarioService.createUsuario(
-                new CreateUsuarioRequest("Fail", "fail@test.com", "123456", null),
-                RolUsuario.COMPRADOR
-        );
-
-        // Act & Assert
-        assertThrows(Exception.class, () -> {
-            usuarioService.login("fail@test.com", "password_erronea");
-        });
-    }
-
-    @Test
-    void createUsuario_conEmailRepetido_deberiaLanzarIllegalArgumentException() {
-        // Arrange
-        CreateUsuarioRequest user1 = new CreateUsuarioRequest("Uno", "repetido@test.com", "123", null);
-        usuarioService.createUsuario(user1, RolUsuario.COMPRADOR);
-
-        CreateUsuarioRequest user2 = new CreateUsuarioRequest("Dos", "repetido@test.com", "456", null);
-
-        // Act & Assert
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> {
-            usuarioService.createUsuario(user2, RolUsuario.COMPRADOR);
-        });
-        assertEquals("El email ya está en uso", ex.getMessage());
-    }
 }

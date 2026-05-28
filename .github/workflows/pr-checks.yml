@@ -1,0 +1,48 @@
+name: Backend CI Checks
+
+on:
+  pull_request:
+    branches: [ "dev" ]
+
+jobs:
+  test-and-build:
+    name: Run Unit, Integration & BDD Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Setup de JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21' # Coincide con tu build.gradle
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Permisos para Gradle Wrapper
+        run: chmod +x ./gradlew
+
+      # 1. Tests Unitarios (Falla rápido si la lógica base está mal)
+      - name: Ejecutar Tests Unitarios
+        run: ./gradlew test
+
+      # 2. Tests de Integración (Verifica base de datos y controladores)
+      - name: Ejecutar Tests de Integración
+        run: ./gradlew integration
+
+      # 3. Tests BDD (Verifica flujos completos)
+      - name: Ejecutar Tests BDD
+        run: ./gradlew bdd
+
+      # Recolectar reportes independientemente de si fallan o pasan
+      - name: Subir reportes de tests
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-reports
+          path: |
+            build/reports/tests/
+            build/test-results/

@@ -95,6 +95,24 @@ public class PublicacionService {
         publicacionRepository.delete(p);
     }
 
+    public List<PublicacionResponse> listarPublicaciones(Usuario usuario) {
+        List<Publicacion> publicaciones = publicacionRepository.search(
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                usuario.getId()
+        );
+
+        // Para la vista de inmobiliaria no enviamos metadata del viewer.
+        return publicaciones.stream()
+                .map(publicacionMapper::toResponse)
+                .toList();
+    }
+
     // --- MÉTODOS PRIVADOS DE SOPORTE ---
 
     private List<Publicacion> ejecutarBusquedaFiltrada(PublicacionSearchParams params) {

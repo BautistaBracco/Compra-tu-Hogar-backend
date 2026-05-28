@@ -10,6 +10,7 @@ import com.practicasDeDesarrollo.backend.mapper.PublicacionMapper;
 import com.practicasDeDesarrollo.backend.mapper.UsuarioMapper;
 import com.practicasDeDesarrollo.backend.repository.CompraRepository;
 import com.practicasDeDesarrollo.backend.repository.PublicacionRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,7 +55,7 @@ public class CompraService {
 
     public void comprar(Long publicacionId, Usuario comprador) {
         Publicacion publicacion = publicacionRepository.findById(publicacionId)
-                .orElseThrow(() -> new RuntimeException("Publicación no encontrada")); // O tu ResourceNotFoundException
+                .orElseThrow(() -> new EntityNotFoundException("Publicación no encontrada"));
 
         if (publicacion.getPropiedad().getVendida()) {
             throw new ConflictException("Esta propiedad ya ha sido vendida.");
