@@ -1,68 +1,87 @@
-# 🏡 Compra Tu Hogar - Backend API
+# Compra Tu Hogar - Backend
 
-Backend desarrollado para la plataforma "Compra Tu Hogar", un sistema de gestión y búsqueda de bienes raíces. Esta API
-RESTful conecta a agencias (inmobiliarias) con compradores, permitiendo la publicación, filtrado avanzado y calificación
-de propiedades.
+API REST para la plataforma "Compra Tu Hogar" (publicaciones, favoritos, compras, reseñas). El backend es Spring Boot y la base de datos es MySQL.
 
-## 🚀 Tecnologías y Herramientas
+Base path: `http://localhost:8080/api/v1`
 
-El proyecto está construido bajo una arquitectura robusta, escalable y orientada a las buenas prácticas utilizando el
-ecosistema de Spring:
+Healthcheck: `GET /health` (sin auth)
 
-* **Java 17+**
-* **Spring Boot 3.x** - Framework principal.
-* **Spring Security & JWT** - Autenticación Stateless y control de acceso basado en roles (`INMOBILIARIA`, `COMPRADOR`,
-  `ADMIN`).
-* **Spring Data JPA / Hibernate** - ORM para la persistencia de datos.
-* **Lombok** - Reducción de código boilerplate (Builders, Getters/Setters).
-* **JUnit 5, Mockito & AssertJ** - Stack de pruebas unitarias y de integración bajo el enfoque BDD (Behavior-Driven
-  Development).
-* **Base de Datos Relacional** - MySQL.
+## Requisitos
 
-## ✨ Características Principales
+- Docker y Docker Compose
 
-1. **Seguridad y Autorización:**
-    * Implementación de tokens JWT mediante filtros personalizados (`JwtAuthenticationFilter`).
-    * Protección de endpoints a nivel de método y rutas (ej. solo el rol Inmobiliaria puede crear publicaciones).
+## Ejecutar (recomendado para clientes, desde Docker Hub)
 
-2. **Manejo Global y Estandarizado de Errores:**
-    * Uso de un `ApiExceptionHandler` centralizado (`@ControllerAdvice`).
-    * Todas las excepciones de negocio (ej. `EntityNotFoundException`) o errores de validación devuelven un payload
-      estructurado JSON con códigos de error claros.
+1. Crear el archivo de variables:
 
-3. **Diseño Desacoplado (Patrón DTO):**
-    * Separación estricta entre las entidades de base de datos (`Entity`) y los objetos expuestos en la API mediante
-      `Request DTOs` y `Response DTOs`, garantizando la seguridad de los datos sensibles.
+```bash
+cp .env.example .env
+```
 
-## 📁 Estructura del Proyecto
+2. Levantar DB + Backend + Frontend (imagenes del registry):
 
-El sistema sigue una clásica arquitectura en capas (Layered Architecture):
+```bash
+docker compose -f docker-compose.prod.yml up -d
+```
 
-* `controller/`: Endpoints de la API REST, validaciones de entrada y manejo de roles (ej. `InmobiliariaController`).
-* `service/`: Capa que concentra toda la lógica de negocio pura.
-* `repository/`: Interfaces JPA para la interacción con la base de datos.
-* `entity/`: Modelos de dominio y mapeo relacional.
-* `dto/`: Objetos de transferencia para requests y responses.
-* `config/`: Configuraciones de seguridad, CORS y encriptación de contraseñas.
-* `exception/`: Clases para el manejo y formateo de errores globales.
+3. Verificar:
 
-## 🐳 Despliegue y Ejecución (Entorno de Evaluación)
+```bash
+curl -s http://localhost:8080/api/v1/health
+```
 
-El proyecto se encuentra contenerizado y la imagen de la aplicación está alojada en un **Docker Registry**. Para evaluar
-el proyecto no es necesario compilar el código ni tener Java instalado, todo se orquesta a través de Docker Compose.
+Para bajar todo:
 
-### Requisitos Previos
+```bash
+docker compose -f docker-compose.prod.yml down
+```
 
-* Docker y Docker Compose instalados en el sistema.
+Para resetear la base (borra volumen):
 
-### Instrucciones de Ejecución
+```bash
+docker compose -f docker-compose.prod.yml down -v
+```
 
-1. **Descargar el archivo de orquestación:**
-   Clonar este repositorio o descargar únicamente el archivo `docker-compose.yml` que se encuentra en la raíz del
-   proyecto.
+## Ejecutar (dev local, build desde este repo)
 
-2. **Levantar los contenedores:**
-   Abrir una terminal en el directorio donde se encuentra el archivo `docker-compose.yml` y ejecutar el siguiente
-   comando:
-   ```bash
-   docker-compose up -d
+1. Crear el archivo de variables:
+
+```bash
+cp .env.example .env
+```
+
+2. Levantar DB + Backend (build local):
+
+```bash
+docker compose up -d --build
+```
+
+Opcional: el `docker-compose.yml` incluye un servicio `frontend` que espera el repo del front clonado en `../Compra-tu-Hogar-frontend`.
+
+## Servicios y puertos
+
+- MySQL: `localhost:3306`
+- Backend: `localhost:8080` (context path `/api/v1`)
+- Frontend: `localhost:5173` (si lo levantas)
+
+## Variables de entorno
+
+Las variables requeridas para el backend estan en `.env.example`:
+
+- `DB_URL`: JDBC URL (en compose: `jdbc:mysql://db:3306/<DB_NAME>`)
+- `DB_USER`, `DB_PASSWORD`: credenciales de MySQL
+- `MYSQL_ROOT_PASSWORD`: password del root (solo para el contenedor MySQL)
+- `JWT_SECRET_KEY`: minimo 32 caracteres (HS256)
+- `JWT_EXPIRATION_TIME`: en milisegundos
+
+## Comandos utiles
+
+Ver logs:
+
+```bash
+docker compose logs -f backend
+```
+
+## Frontend (documentacion)
+
+TODO: agregar documentacion del frontend (build, variables de entorno, como apuntar al backend, y como correr con la imagen `bautistabracco/compra-tu-hogar-frontend`).
