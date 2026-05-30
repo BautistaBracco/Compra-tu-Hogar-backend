@@ -18,15 +18,13 @@ services:
       retries: 5
 
   backend:
-    build: .
+    image: bautistabracco/compra-tu-hogar-backend:latest
     container_name: spring-backend
     depends_on:
       db:
         condition: service_healthy
     ports:
       - "8080:8080"
-    volumes:
-      - uploads_data:/app/uploads
     environment:
       DB_URL: ${DB_URL}
       DB_USER: ${DB_USER}
@@ -35,19 +33,13 @@ services:
       JWT_EXPIRATION_TIME: ${JWT_EXPIRATION_TIME}
 
   frontend:
-    image: node:20-alpine
-    container_name: node-frontend
-    working_dir: /app
-    ports:
-      - "5173:5173"
-    volumes:
-      - ../Compra-tu-Hogar-frontend:/app
-    environment:
-      - CHOKIDAR_USEPOLLING=true
-    command: sh -c "npm install && npm run dev -- --host"
+    image: bautistabracco/compra-tu-hogar-frontend:latest
+    container_name: web-frontend
     depends_on:
       - backend
+    ports:
+      - "5173:5173"
+    # TODO(frontend): define env vars and runtime command once frontend Docker image is ready.
 
 volumes:
   mysql_data:
-  uploads_data:

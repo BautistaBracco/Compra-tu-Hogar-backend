@@ -1,46 +1,133 @@
 plugins {
-	id 'java'
-	id 'org.springframework.boot' version '4.0.5'
-	id 'io.spring.dependency-management' version '1.1.7'
+    id 'java'
+    id 'org.springframework.boot' version '4.0.5'
+    id 'io.spring.dependency-management' version '1.1.7'
 }
 
 group = 'com.practicasDeDesarrollo'
 version = '0.0.1-SNAPSHOT'
 
 java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(21)
-	}
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
 }
 
 repositories {
-	mavenCentral()
+    mavenCentral()
 }
 
-	dependencies {
-		implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-		implementation 'org.springframework.boot:spring-boot-starter-security'
-		implementation 'org.springframework.boot:spring-boot-starter-validation'
-		implementation 'org.springframework.boot:spring-boot-starter-webmvc'
-	compileOnly 'org.projectlombok:lombok'
-	developmentOnly 'org.springframework.boot:spring-boot-devtools'
-	runtimeOnly 'com.mysql:mysql-connector-j'
-	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
-	annotationProcessor 'org.projectlombok:lombok'
-		testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
-		testImplementation 'org.springframework.boot:spring-boot-starter-test'
-		testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
-		testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'
-		testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
-	testRuntimeOnly 'com.h2database:h2'
-	testCompileOnly 'org.projectlombok:lombok'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-	testAnnotationProcessor 'org.projectlombok:lombok'
-	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
-	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
-	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    compileOnly 'org.projectlombok:lombok'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    runtimeOnly 'com.mysql:mysql-connector-j'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+    annotationProcessor 'org.projectlombok:lombok'
+    testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-validation-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    testImplementation 'io.cucumber:cucumber-java:7.14.0'
+    testImplementation 'io.cucumber:cucumber-spring:7.14.0'
+    testImplementation 'io.cucumber:cucumber-junit-platform-engine:7.14.0'
+    testImplementation 'org.junit.platform:junit-platform-suite-api:6.0.3'
+    testRuntimeOnly 'org.junit.platform:junit-platform-suite-engine:6.0.3'
+    testRuntimeOnly 'com.h2database:h2'
+    testCompileOnly 'org.projectlombok:lombok'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+}
+sourceSets {
+    unitTest {
+        java {
+            srcDirs = ['src/test/java']
+            include '**/unit/**' // Filtra solo lo que esté en paquetes "unit"
+        }
+        resources { srcDirs = ['src/test/resources'] }
+        compileClasspath += sourceSets.main.output + configurations.testCompileClasspath
+        runtimeClasspath += output + compileClasspath + configurations.testRuntimeClasspath
+    }
+
+    integrationTest {
+        java {
+            srcDirs = ['src/test/java']
+            include '**/integration/**' // Filtra solo lo que esté en paquetes "integration"
+            include '**/BackendApplicationTests.java'
+        }
+        resources { srcDirs = ['src/test/resources'] }
+        compileClasspath += sourceSets.main.output + configurations.testCompileClasspath
+        runtimeClasspath += output + compileClasspath + configurations.testRuntimeClasspath
+    }
+
+    bddTest {
+        java {
+            srcDirs = ['src/test/java']
+            include '**/bdd/**' // Filtra solo lo que esté en paquetes "bdd"
+        }
+        resources { srcDirs = ['src/test/resources'] }
+        compileClasspath += sourceSets.main.output + configurations.testCompileClasspath
+        runtimeClasspath += output + compileClasspath + configurations.testRuntimeClasspath
+    }
 }
 
-tasks.named('test') {
-	useJUnitPlatform()
+configurations {
+    unitTestImplementation.extendsFrom testImplementation
+    unitTestRuntimeOnly.extendsFrom testRuntimeOnly
+    unitTestCompileOnly.extendsFrom testCompileOnly
+    unitTestAnnotationProcessor.extendsFrom testAnnotationProcessor
+
+    integrationTestImplementation.extendsFrom testImplementation
+    integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+    integrationTestCompileOnly.extendsFrom testCompileOnly
+    integrationTestAnnotationProcessor.extendsFrom testAnnotationProcessor
+
+    bddTestImplementation.extendsFrom testImplementation
+    bddTestRuntimeOnly.extendsFrom testRuntimeOnly
+    bddTestCompileOnly.extendsFrom testCompileOnly
+    bddTestAnnotationProcessor.extendsFrom testAnnotationProcessor
+}
+
+// 1. Sobreescribimos la tarea nativa 'test' para que SOLO corra unitarios
+tasks.named('test', Test) {
+    description = 'Runs unit tests.'
+    testClassesDirs = sourceSets.unitTest.output.classesDirs
+    classpath = sourceSets.unitTest.runtimeClasspath
+    useJUnitPlatform()
+}
+
+// 2. Tarea para tests de integración
+tasks.register('integration', Test) {
+    description = 'Runs integration tests.'
+    group = 'verification'
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    useJUnitPlatform()
+
+    // Se ejecuta DESPUÉS de la tarea 'test' (unitarios)
+    shouldRunAfter tasks.named('test')
+}
+
+// 3. Tarea para tests BDD
+tasks.register('bdd', Test) {
+    description = 'Runs BDD tests.'
+    group = 'verification'
+    testClassesDirs = sourceSets.bddTest.output.classesDirs
+    classpath = sourceSets.bddTest.runtimeClasspath
+    useJUnitPlatform()
+
+    // Se ejecuta DESPUÉS de la tarea de integración
+    shouldRunAfter tasks.named('integration')
+}
+
+// (Opcional) Hacemos que el comando './gradlew check' o 'build' corra TODO
+tasks.named('check') {
+    dependsOn tasks.named('integration'), tasks.named('bdd')
 }
