@@ -11,7 +11,7 @@ http:
 runtime:
   variables:
     - name: publicacionId
-      value: "1"
+      value: "2"
 
 settings:
   encodeUrl: true

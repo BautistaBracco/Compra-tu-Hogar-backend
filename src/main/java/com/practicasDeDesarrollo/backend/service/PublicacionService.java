@@ -6,6 +6,7 @@ import com.practicasDeDesarrollo.backend.dto.request.UpdatePublicacionRequest;
 import com.practicasDeDesarrollo.backend.dto.response.PublicacionResponse;
 import com.practicasDeDesarrollo.backend.entity.*;
 import com.practicasDeDesarrollo.backend.exception.ConflictException;
+import com.practicasDeDesarrollo.backend.exception.ForbiddenException;
 import com.practicasDeDesarrollo.backend.mapper.PublicacionMapper;
 import com.practicasDeDesarrollo.backend.repository.PublicacionRepository;
 import com.practicasDeDesarrollo.backend.repository.UsuarioRepository;
@@ -95,6 +96,24 @@ public class PublicacionService {
         publicacionRepository.delete(p);
     }
 
+    public List<PublicacionResponse> listarPublicaciones(Usuario usuario) {
+        List<Publicacion> publicaciones = publicacionRepository.search(
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                usuario.getId()
+        );
+
+        // Para la vista de inmobiliaria no enviamos metadata del viewer.
+        return publicaciones.stream()
+                .map(publicacionMapper::toResponse)
+                .toList();
+    }
+
     // --- MÉTODOS PRIVADOS DE SOPORTE ---
 
     private List<Publicacion> ejecutarBusquedaFiltrada(PublicacionSearchParams params) {
@@ -163,7 +182,7 @@ public class PublicacionService {
 
     private void validarAutoria(Publicacion p, Usuario inmobiliaria) {
         if (!p.getInmobiliaria().getId().equals(inmobiliaria.getId())) {
-            throw new IllegalArgumentException("No tienes permiso sobre esta publicación");
+            throw new ForbiddenException("No tienes permiso sobre esta publicación");
         }
     }
 

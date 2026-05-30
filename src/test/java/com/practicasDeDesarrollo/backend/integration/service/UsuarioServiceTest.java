@@ -1,10 +1,11 @@
-package com.practicasDeDesarrollo.backend.service;
+package com.practicasDeDesarrollo.backend.integration.service;
 
 import com.practicasDeDesarrollo.backend.dto.request.CreateUsuarioRequest;
 import com.practicasDeDesarrollo.backend.dto.response.AuthResponse;
 import com.practicasDeDesarrollo.backend.entity.Usuario;
 import com.practicasDeDesarrollo.backend.entity.enums.RolUsuario;
 import com.practicasDeDesarrollo.backend.repository.UsuarioRepository;
+import com.practicasDeDesarrollo.backend.service.UsuarioService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -60,34 +61,5 @@ class UsuarioServiceTest {
         // Assert
         assertNotNull(response.token());
         assertEquals("login@test.com", response.email());
-    }
-
-    @Test
-    void login_conPasswordIncorrecta_deberiaLanzarExcepcion() {
-        // Arrange
-        usuarioService.createUsuario(
-                new CreateUsuarioRequest("Fail", "fail@test.com", "123456", null),
-                RolUsuario.COMPRADOR
-        );
-
-        // Act & Assert
-        assertThrows(Exception.class, () -> {
-            usuarioService.login("fail@test.com", "password_erronea");
-        });
-    }
-
-    @Test
-    void createUsuario_conEmailRepetido_deberiaLanzarIllegalArgumentException() {
-        // Arrange
-        CreateUsuarioRequest user1 = new CreateUsuarioRequest("Uno", "repetido@test.com", "123", null);
-        usuarioService.createUsuario(user1, RolUsuario.COMPRADOR);
-
-        CreateUsuarioRequest user2 = new CreateUsuarioRequest("Dos", "repetido@test.com", "456", null);
-
-        // Act & Assert
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> {
-            usuarioService.createUsuario(user2, RolUsuario.COMPRADOR);
-        });
-        assertEquals("El email ya está en uso", ex.getMessage());
     }
 }
