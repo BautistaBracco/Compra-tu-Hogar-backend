@@ -12,5 +12,5 @@ public interface ResenaRepository extends JpaRepository<Resena, Long> {
 
     List<Resena> findByPublicacionId(Long id);
 
-    Optional<Resena> findByPublicacionIdAndAutorId(Long publicacionId, Long autorId);
+    Optional<Resena> findByIdAndAutorId(Long resenaId, Long autorId);
 }
