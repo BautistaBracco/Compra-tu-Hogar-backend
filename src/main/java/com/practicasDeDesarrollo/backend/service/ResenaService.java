@@ -46,8 +46,8 @@ public class ResenaService {
 
     }
 
-    public void eliminarResenaPorPublicacion(Long publicacionId, Usuario usuario) {
-        Resena resena = resenaRepository.findByPublicacionIdAndAutorId(publicacionId, usuario.getId())
+    public void eliminarResenaPorId(Long resenaId, Usuario usuario) {
+        Resena resena = resenaRepository.findByIdAndAutorId(resenaId, usuario.getId())
                 .orElseThrow(() -> new EntityNotFoundException("Reseña no encontrada"));
 
         resenaRepository.delete(resena);
