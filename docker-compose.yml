@@ -33,6 +33,11 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       JWT_EXPIRATION_TIME: ${JWT_EXPIRATION_TIME}
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/8080' || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
 
   frontend:
     image: node:20-alpine
@@ -46,7 +51,26 @@ services:
       - CHOKIDAR_USEPOLLING=true
     command: sh -c "npm install && npm run dev -- --host"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy # El frontend no arranca hasta que Spring esté SANO
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5173"]
+      interval: 5s
+      timeout: 5s
+      retries: 6
+
+  cypress:
+    image: cypress/included:13.10.0
+    container_name: cypress-tests
+    network_mode: "host"
+    depends_on:
+      frontend:
+        condition: service_healthy # Cypress espera al frontend (que a su vez esperó a Spring)
+    environment:
+      - CYPRESS_BASE_URL=http://localhost:5173
+    working_dir: /app
+    volumes:
+      - ../Compra-tu-Hogar-frontend:/app
 
 volumes:
   mysql_data:

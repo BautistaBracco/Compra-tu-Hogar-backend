@@ -78,6 +78,8 @@ public class DataInitializer {
         // Seed de caracteristicas (solo perfil test)
         crearCaracteristicaSiNoExiste("AIRE ACONDICIONADO");
         crearCaracteristicaSiNoExiste("COCHERA");
+        crearCaracteristicaSiNoExiste("PARILLA");
+        crearCaracteristicaSiNoExiste("WIFI");
 
         if (publicacionRepository.count() == 0) {
             var caracteristicasPorNombre = caracteristicaRepository.findAll().stream()
