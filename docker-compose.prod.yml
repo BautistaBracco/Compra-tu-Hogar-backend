@@ -38,8 +38,7 @@ services:
     depends_on:
       - backend
     ports:
-      - "5173:5173"
-    # TODO(frontend): define env vars and runtime command once frontend Docker image is ready.
+      - "5173:80"
 
 volumes:
   mysql_data:
