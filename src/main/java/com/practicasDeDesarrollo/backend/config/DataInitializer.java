@@ -70,7 +70,7 @@ public class DataInitializer {
         crearUsuarioSiNoExiste(
                 "CostaInmuebles@gmail.com",
                 "Costa Inmuebles",
-                "87654321",
+                "12345678",
                 "https://via.placeholder.com/150?text=Inmobiliaria+2",
                 RolUsuario.INMOBILIARIA
         );
