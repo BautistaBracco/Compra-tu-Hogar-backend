@@ -176,7 +176,7 @@ public class PublicacionService {
         }
         publicacionRepository.findByInmobiliariaIdAndPropiedadId(inmobiliaria.getId(), propiedad.getId())
                 .ifPresent(existing -> {
-                    throw new ConflictException("Ya existe una publicación para esta propiedad");
+                    throw new ConflictException("Ya hiciste una publicación para esta propiedad");
                 });
     }
 

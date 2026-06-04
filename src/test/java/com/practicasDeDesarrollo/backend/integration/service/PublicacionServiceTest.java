@@ -73,7 +73,6 @@ class PublicacionServiceTest {
         adminPersistido = usuarioRepository.save(admin);
     }
 
-    // Método auxiliar para no repetir código en los tests
     private PublicacionResponse crearPublicacionBase() {
         CreatePropiedadRequest propReq = new CreatePropiedadRequest(
                 TipoPropiedad.DEPTO, "Pringles 450", "2", "B", 40, 2, 1, 12000, Set.of()
