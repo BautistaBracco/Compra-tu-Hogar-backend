@@ -5,12 +5,8 @@ import com.practicasDeDesarrollo.backend.dto.response.AuthResponse;
 import com.practicasDeDesarrollo.backend.entity.Usuario;
 import com.practicasDeDesarrollo.backend.entity.enums.RolUsuario;
 import com.practicasDeDesarrollo.backend.exception.ConflictException;
-import com.practicasDeDesarrollo.backend.mapper.PublicacionMapper;
-import com.practicasDeDesarrollo.backend.mapper.UsuarioMapper;
-import com.practicasDeDesarrollo.backend.repository.PublicacionRepository;
 import com.practicasDeDesarrollo.backend.repository.UsuarioRepository;
 import com.practicasDeDesarrollo.backend.service.JwtService;
-import com.practicasDeDesarrollo.backend.service.PublicacionService;
 import com.practicasDeDesarrollo.backend.service.UsuarioService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -38,19 +34,11 @@ class UsuarioServiceTest {
     @Mock
     private UsuarioRepository usuarioRepository;
     @Mock
-    private PublicacionRepository publicacionRepository;
-    @Mock
-    private PublicacionService publicacionService;
-    @Mock
     private PasswordEncoder passwordEncoder;
     @Mock
     private AuthenticationManager authenticationManager;
     @Mock
     private JwtService jwtService;
-    @Mock
-    private UsuarioMapper usuarioMapper;
-    @Mock
-    private PublicacionMapper publicacionMapper;
 
     @InjectMocks
     private UsuarioService usuarioService;

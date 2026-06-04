@@ -5,7 +5,7 @@ Plataforma integral para la gestión de bienes raíces (publicaciones, favoritos
 ## 🛠️ Tecnologías y Herramientas
 
 * **Backend:** Spring Boot, Java, MySQL.
-* **Frontend:** React, Typescript, Vite.
+* **Frontend:** React, Javascript, Vite.
 * **Infraestructura:** Docker, Docker Compose, Docker Hub (Registry).
 
 ## 📐 Arquitectura y Diseño
@@ -38,13 +38,6 @@ cp .env.example .env
 
 ```bash
 docker compose -f docker-compose.prod.yml up -d
-```
-
-3. **Verificar el estado:**
-   Comprobá que el backend está respondiendo correctamente (no requiere autenticación).
-
-```bash
-curl -s http://localhost:8080/api/v1/health
 ```
 
 ### Comandos de gestión
@@ -112,13 +105,35 @@ docker compose logs -f backend
 
 ## 💻 Frontend (Entorno de Desarrollo)
 
-*(TODO: Completar con la documentación específica del equipo de Frontend)*
+Interfaz de usuario construida con React y Vite.
 
-* **Framework / Build Tool:** Vite (Puerto 5173).
-* **Imagen Docker de Producción:** `bautistabracco/compra-tu-hogar-frontend`
-* **Configuración de variables de entorno:** Explicar cómo apuntar el front al `http://localhost:8080/api/v1` del backend.
-* **Comandos de desarrollo local:** Ej: `npm install`, `npm run dev`.
-* **Ejecución aislada:** Explicar cómo correr únicamente la imagen del frontend si fuera necesario.
+* **Base URL:** `http://localhost:5173`
+* **Build Tool:** Vite
+
+### Levantar el entorno local
+Si vas a desarrollar o modificar la interfaz:
+
+1. **Instalar dependencias:**
+   ```bash
+   npm install
+   ```
+
+2. **Ejecutar en modo desarrollo:**
+   ```bash
+   npm run dev
+   ```
+
+### Variables de Entorno (Frontend)
+Utiliza variables prefijadas con `VITE_`. Podés crearlas en un archivo `.env` en el repo del frontend:
+
+* `VITE_API_URL`: URL de la API del backend (por defecto: `http://localhost:8080/api/v1`).
+
+### Calidad y Pruebas
+* **Linting y Formateo (Biome):** `npm run lint` / `npm run format`
+* **Pruebas E2E (Cypress):** `npm run cypress:open`
+
+### Imagen Docker de Producción
+`bautistabracco/compra-tu-hogar-frontend`
 
 ---
 

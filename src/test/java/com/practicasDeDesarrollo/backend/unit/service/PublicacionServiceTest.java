@@ -160,7 +160,7 @@ class PublicacionServiceTest {
         }
 
         @Test
-        @DisplayName("debería lanzar ConflictException si ya existe una publicación para esa propiedad")
+        @DisplayName("debería lanzar ConflictException si ya hiciste una publicación para esa propiedad")
         void deberia_lanzar_ConflictException_si_publicacion_duplicada() {
             Usuario inmo = inmobiliaria(1L);
             Propiedad propiedad = propiedadDisponible();
@@ -173,7 +173,7 @@ class PublicacionServiceTest {
             ConflictException ex = assertThrows(ConflictException.class,
                     () -> publicacionService.createPublicacion(requestBase(propiedad), inmo));
 
-            assertEquals("Ya existe una publicación para esta propiedad", ex.getMessage());
+            assertEquals("Ya hiciste una publicación para esta propiedad", ex.getMessage());
             verify(publicacionRepository, never()).save(any());
         }
     }

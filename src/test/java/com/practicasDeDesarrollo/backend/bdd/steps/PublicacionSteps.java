@@ -3,7 +3,6 @@ package com.practicasDeDesarrollo.backend.bdd.steps;
 import com.practicasDeDesarrollo.backend.bdd.support.BddWorld;
 import com.practicasDeDesarrollo.backend.bdd.support.TestHttpClient;
 import com.practicasDeDesarrollo.backend.entity.enums.RolUsuario;
-import com.practicasDeDesarrollo.backend.repository.UsuarioRepository;
 import com.practicasDeDesarrollo.backend.service.UsuarioService;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
@@ -21,22 +20,19 @@ import static org.junit.jupiter.api.Assertions.*;
 public class PublicacionSteps {
 
     private final UsuarioService usuarioService;
-    private final UsuarioRepository usuarioRepository;
     private final TestHttpClient http;
     private final BddWorld world;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public PublicacionSteps(UsuarioService usuarioService, UsuarioRepository usuarioRepository, TestHttpClient http, BddWorld world) {
+    public PublicacionSteps(UsuarioService usuarioService, TestHttpClient http, BddWorld world) {
         this.usuarioService = usuarioService;
-        this.usuarioRepository = usuarioRepository;
         this.http = http;
         this.world = world;
     }
 
     @Given("que estoy autenticado como inmobiliaria")
     public void que_estoy_autenticado_como_inmobiliaria() {
-        // Creamos una inmobiliaria directamente via service (evitamos depender de /admin y authz del admin).
         var auth = usuarioService.createUsuario(
                 new com.practicasDeDesarrollo.backend.dto.request.CreateUsuarioRequest(
                         "Quilmes Prop",
