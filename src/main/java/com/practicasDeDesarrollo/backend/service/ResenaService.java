@@ -63,4 +63,10 @@ public class ResenaService {
                 resena.getPublicacion().getId()
         );
     }
+
+    public List<ResenaResponse> listarResenasPorUsuario(Long usuarioId) {
+        return resenaRepository.findByAutorId(usuarioId).stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
 }

@@ -27,4 +27,6 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     // Para el buscar por ID individual
     @Query("SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END FROM Usuario u JOIN u.favoritos p WHERE u.id = :usuarioId AND p.id = :publicacionId")
     boolean isFavorito(@Param("usuarioId") Long usuarioId, @Param("publicacionId") Long publicacionId);
+
+    List<Usuario> findByFavoritos_Id(Long publicacionId);
 }
