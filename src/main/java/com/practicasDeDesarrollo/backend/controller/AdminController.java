@@ -24,6 +24,7 @@ public class AdminController {
     private final PublicacionService publicacionService;
     private final CompraService compraService;
     private final ResenaService resenaService;
+    private final AdminService adminService;
 
     @GetMapping("/usuarios")
     public ResponseEntity<List<UsuarioResponse>> listarUsuarios(@RequestParam RolUsuario rol) {
@@ -62,5 +63,20 @@ public class AdminController {
     @GetMapping("/compras")
     public ResponseEntity<List<CompraResponse>> listarPropiedadesCompradas() {
         return ResponseEntity.ok(compraService.obtenerVentas());
+    }
+
+    @GetMapping("/top-usuarios")
+    public ResponseEntity<List<TopUserResponse>> getTopUsuarios() {
+        return ResponseEntity.ok(adminService.getTopUsuarios());
+    }
+
+    @GetMapping("/top-publicaciones")
+    public ResponseEntity<List<TopPropertyResponse>> getTopPropiedades() {
+        return ResponseEntity.ok(adminService.getTopPublicaciones());
+    }
+
+    @GetMapping("/top-inmobiliarias")
+    public ResponseEntity<List<TopAgencyResponse>> getTopInmobiliarias() {
+        return ResponseEntity.ok(adminService.getTopInmobiliarias());
     }
 }
