@@ -44,6 +44,21 @@ public class CompraService {
     }
 
     @Transactional(readOnly = true)
+    public List<CompraResponse> obtenerVentas() {
+        List<Compra> ventas = compraRepository.findAll();
+
+        return ventas.stream()
+                .map(compra -> new CompraResponse(
+                        compra.getId(),
+                        compra.getPrecioCompra(),
+                        compra.getCreadoEn(),
+                        usuarioMapper.toResponse(compra.getComprador()),
+                        publicacionMapper.toResponse(compra.getPublicacion())
+                ))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<UsuarioResponse> obtenerClientes(Usuario usuario) {
         List<Compra> ventas = compraRepository.findByPublicacionInmobiliaria(usuario);
 

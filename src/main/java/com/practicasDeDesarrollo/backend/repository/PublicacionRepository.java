@@ -80,5 +80,11 @@ public interface PublicacionRepository extends JpaRepository<Publicacion, Long> 
             @Param("carCount") long carCount
     );
 
-    List<Publicacion> findByInmobiliariaId(Long id);
+
+    @Query("""
+                SELECT DISTINCT p
+                FROM Usuario u
+                JOIN u.favoritos p
+            """)
+    List<Publicacion> findConFavoritos();
 }

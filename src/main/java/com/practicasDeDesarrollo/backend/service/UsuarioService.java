@@ -32,7 +32,6 @@ public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
     private final PublicacionRepository publicacionRepository;
-    private final PublicacionService publicacionService;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
@@ -71,7 +70,6 @@ public class UsuarioService {
             usuario.setIcono(request.icono());
         }
 
-        // El guardado se hace gracias a @Transactional, pero retornar el map es lo correcto
         Usuario saved = usuarioRepository.save(usuario);
         return usuarioMapper.toResponse(saved);
     }
@@ -87,16 +85,11 @@ public class UsuarioService {
 
         attachedUsuario.getFavoritos().add(publicacion);
 
-        // No necesitamos hacer usuarioRepository.save(attachedUsuario)
-        // Hibernate realiza "Dirty Checking" y guarda el cambio automáticamente.
         return publicacionMapper.toResponse(publicacion, true);
     }
 
     public void eliminarFavorito(Long publicacionId, Usuario usuario) {
         Usuario attachedUsuario = obtenerUsuarioAutenticado(usuario.getId());
-
-        // Optimización: getReferenceById no hace una consulta SELECT a la base de datos.
-        // Solo crea un proxy con el ID, lo cual es ideal y suficiente para remover la relación.
         Publicacion publicacionProxy = publicacionRepository.getReferenceById(publicacionId);
 
         attachedUsuario.getFavoritos().remove(publicacionProxy);
@@ -109,6 +102,11 @@ public class UsuarioService {
         return attachedUsuario.getFavoritos().stream().map(p -> publicacionMapper.toResponse(p, true)).toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<UsuarioResponse> buscarUsuarioQueGuardaronPublicacion(Long publicacionId) {
+        return usuarioRepository.findByFavoritos_Id(publicacionId).stream().map(usuarioMapper::toResponse).toList();
+    }
+
     // --- MÉTODOS PRIVADOS DE SOPORTE ---
 
     private AuthResponse buildAuthResponse(Usuario usuario, String token) {
@@ -118,4 +116,5 @@ public class UsuarioService {
     private Usuario obtenerUsuarioAutenticado(Long id) {
         return usuarioRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
     }
+
 }

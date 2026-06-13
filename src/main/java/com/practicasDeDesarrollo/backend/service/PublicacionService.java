@@ -40,15 +40,19 @@ public class PublicacionService {
         List<Long> idsPublicaciones = resultados.stream().map(Publicacion::getId).toList();
         Set<Long> favoritosIds = usuarioRepository.findFavoritoIdsIn(usuario.getId(), idsPublicaciones);
 
-        return resultados.stream()
-                .map(p -> publicacionMapper.toResponse(p, favoritosIds.contains(p.getId())))
-                .toList();
+        return resultados.stream().map(p -> publicacionMapper.toResponse(p, favoritosIds.contains(p.getId()))).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<PublicacionResponse> buscarPublicacionesConAlmenosUnFavorito() {
+        List<Publicacion> resultados = publicacionRepository.findConFavoritos();
+
+        return resultados.stream().map(publicacionMapper::toResponse).toList();
     }
 
     @Transactional(readOnly = true)
     public PublicacionResponse buscarPorId(Long id, Usuario usuario) {
-        Publicacion p = publicacionRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Publicación no encontrada"));
+        Publicacion p = publicacionRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Publicación no encontrada"));
 
         boolean esFavorito = usuarioRepository.isFavorito(usuario.getId(), id);
         return publicacionMapper.toResponse(p, esFavorito);
@@ -59,12 +63,7 @@ public class PublicacionService {
 
         validarPublicacionUnica(inmobiliaria, propiedad);
 
-        Publicacion p = Publicacion.builder()
-                .precio(request.precio())
-                .descripcion(request.descripcion())
-                .inmobiliaria(inmobiliaria)
-                .propiedad(propiedad)
-                .build();
+        Publicacion p = Publicacion.builder().precio(request.precio()).descripcion(request.descripcion()).inmobiliaria(inmobiliaria).propiedad(propiedad).build();
 
         // Seteo de imágenes con orden
         p.setImagenes(crearListaImagenes(request.imagenes(), p));
@@ -73,8 +72,7 @@ public class PublicacionService {
     }
 
     public PublicacionResponse modificarPublicacion(Long id, UpdatePublicacionRequest request, Usuario inmobiliaria) {
-        Publicacion p = publicacionRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Publicación no encontrada"));
+        Publicacion p = publicacionRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Publicación no encontrada"));
 
         validarAutoria(p, inmobiliaria);
 
@@ -89,50 +87,29 @@ public class PublicacionService {
     }
 
     public void eliminarPublicacion(Long id, @NonNull Usuario inmobiliaria) {
-        Publicacion p = publicacionRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Publicación no encontrada"));
+        Publicacion p = publicacionRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Publicación no encontrada"));
 
         validarAutoria(p, inmobiliaria);
         publicacionRepository.delete(p);
     }
 
     public List<PublicacionResponse> listarPublicaciones(Usuario usuario) {
-        List<Publicacion> publicaciones = publicacionRepository.search(
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                usuario.getId()
-        );
+        List<Publicacion> publicaciones = publicacionRepository.search(null, null, null, null, null, null, null, usuario.getId());
 
         // Para la vista de inmobiliaria no enviamos metadata del viewer.
-        return publicaciones.stream()
-                .map(publicacionMapper::toResponse)
-                .toList();
+        return publicaciones.stream().map(publicacionMapper::toResponse).toList();
     }
 
     // --- MÉTODOS PRIVADOS DE SOPORTE ---
 
     private List<Publicacion> ejecutarBusquedaFiltrada(PublicacionSearchParams params) {
-        List<Long> caracs = (params.caracteristicaIds() == null)
-                ? List.of()
-                : params.caracteristicaIds().stream().distinct().toList();
+        List<Long> caracs = (params.caracteristicaIds() == null) ? List.of() : params.caracteristicaIds().stream().distinct().toList();
 
         if (caracs.isEmpty()) {
-            return publicacionRepository.search(
-                    params.vendida(), params.tipo(), params.minPrecio(), params.maxPrecio(),
-                    params.ubicacion(), params.ambientesMin(), params.ambientesMax(), params.inmobiliariaId()
-            );
+            return publicacionRepository.search(params.vendida(), params.tipo(), params.minPrecio(), params.maxPrecio(), params.ubicacion(), params.ambientesMin(), params.ambientesMax(), params.inmobiliariaId());
         }
 
-        return publicacionRepository.searchMatchAllCaracteristicas(
-                params.vendida(), params.tipo(), params.minPrecio(), params.maxPrecio(),
-                params.ubicacion(), params.ambientesMin(), params.ambientesMax(),
-                params.inmobiliariaId(), caracs, caracs.size()
-        );
+        return publicacionRepository.searchMatchAllCaracteristicas(params.vendida(), params.tipo(), params.minPrecio(), params.maxPrecio(), params.ubicacion(), params.ambientesMin(), params.ambientesMax(), params.inmobiliariaId(), caracs, caracs.size());
     }
 
     private void actualizarImagenes(Publicacion p, List<String> nuevasUrls) {
@@ -147,11 +124,7 @@ public class PublicacionService {
         // Añadir nuevas si sobran
         if (nuevasUrls.size() > actuales.size()) {
             for (int i = limit; i < nuevasUrls.size(); i++) {
-                actuales.add(Imagen.builder()
-                        .url(nuevasUrls.get(i))
-                        .publicacion(p)
-                        .orden(i + 1)
-                        .build());
+                actuales.add(Imagen.builder().url(nuevasUrls.get(i)).publicacion(p).orden(i + 1).build());
             }
         }
         // Eliminar si sobran en la DB
@@ -161,23 +134,16 @@ public class PublicacionService {
     }
 
     private List<Imagen> crearListaImagenes(List<String> urls, Publicacion p) {
-        return new ArrayList<>(IntStream.range(0, urls.size())
-                .mapToObj(i -> Imagen.builder()
-                        .url(urls.get(i))
-                        .publicacion(p)
-                        .orden(i + 1)
-                        .build())
-                .toList());
+        return new ArrayList<>(IntStream.range(0, urls.size()).mapToObj(i -> Imagen.builder().url(urls.get(i)).publicacion(p).orden(i + 1).build()).toList());
     }
 
     private void validarPublicacionUnica(Usuario inmobiliaria, Propiedad propiedad) {
         if (Boolean.TRUE.equals(propiedad.getVendida())) {
             throw new ConflictException("La propiedad ya fue vendida");
         }
-        publicacionRepository.findByInmobiliariaIdAndPropiedadId(inmobiliaria.getId(), propiedad.getId())
-                .ifPresent(existing -> {
-                    throw new ConflictException("Ya hiciste una publicación para esta propiedad");
-                });
+        publicacionRepository.findByInmobiliariaIdAndPropiedadId(inmobiliaria.getId(), propiedad.getId()).ifPresent(existing -> {
+            throw new ConflictException("Ya hiciste una publicación para esta propiedad");
+        });
     }
 
     private void validarAutoria(Publicacion p, Usuario inmobiliaria) {
