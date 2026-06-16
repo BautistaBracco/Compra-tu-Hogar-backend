@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '4.0.5'
     id 'io.spring.dependency-management' version '1.1.7'
+    id("org.sonarqube") version "6.1.0.5360"
 }
 
 group = 'com.practicasDeDesarrollo'
@@ -130,4 +131,13 @@ tasks.register('bdd', Test) {
 // (Opcional) Hacemos que el comando './gradlew check' o 'build' corra TODO
 tasks.named('check') {
     dependsOn tasks.named('integration'), tasks.named('bdd')
+}
+
+
+sonar {
+    properties {
+        property("sonar.projectKey", "Compra-tu-Hogar-backend")
+        property("sonar.organization", "BautistaBracco")
+        property("sonar.host.url", "https://sonarcloud.io")
+    }
 }
