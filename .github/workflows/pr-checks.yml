@@ -37,6 +37,16 @@ jobs:
       - name: Ejecutar Tests BDD
         run: ./gradlew bdd
 
+      - name: Ejecutar SonarCloud
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          ./gradlew sonar \
+            -Dsonar.token=$SONAR_TOKEN \
+            -Dsonar.organization=BautistaBracco \
+            -Dsonar.projectKey=Compra-tu-Hogar-backend \
+            -Dsonar.host.url=https://sonarcloud.io
+
       # Recolectar reportes independientemente de si fallan o pasan
       - name: Subir reportes de tests
         uses: actions/upload-artifact@v4
