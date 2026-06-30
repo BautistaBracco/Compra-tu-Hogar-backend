@@ -136,11 +136,15 @@ tasks.named('check') {
     dependsOn tasks.named('integration'), tasks.named('bdd')
 }
 
-
 sonar {
     properties {
         property("sonar.projectKey", "Compra-tu-Hogar-backend")
         property("sonar.organization", "bautistabracco")
         property("sonar.host.url", "https://sonarcloud.io")
+
+        property(
+                "sonar.coverage.exclusions",
+                "**/*Config.java,**/*Filter.java,**/exception/**,**/logging/**,**/*Metrics*"
+        )
     }
 }
