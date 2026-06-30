@@ -16,11 +16,14 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.exc.InvalidFormatException;
 
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestControllerAdvice
 public class ApiExceptionHandler {
 
@@ -59,6 +62,10 @@ public class ApiExceptionHandler {
                 details.put(err.getField(), err.getDefaultMessage())
         );
 
+        MDC.put("exceptionType", "MethodArgumentNotValidException");
+        MDC.put("exceptionMessage", "Error en los datos enviados");
+        log.warn("Validation error: {} - {}", requestPath(request), details);
+
         ApiError error = buildError(
                 HttpStatus.BAD_REQUEST,
                 ErrorCode.VALIDATION_ERROR,
@@ -90,6 +97,10 @@ public class ApiExceptionHandler {
             details.put("valor", ife.getValue());
             details.put("permitidos", ife.getTargetType().getEnumConstants());
 
+            MDC.put("exceptionType", "InvalidFormatException");
+            MDC.put("exceptionMessage", "Valor inválido para enum: " + ife.getValue());
+            log.warn("Invalid enum value for field {}: {} - {}", campo, ife.getValue(), requestPath(request));
+
             ApiError error = buildError(
                     HttpStatus.BAD_REQUEST,
                     ErrorCode.INVALID_ENUM,
@@ -100,6 +111,10 @@ public class ApiExceptionHandler {
 
             return ResponseEntity.badRequest().body(error);
         }
+
+        MDC.put("exceptionType", "HttpMessageNotReadableException");
+        MDC.put("exceptionMessage", "JSON mal formado");
+        log.warn("Malformed JSON: {} - {}", requestPath(request), ex.getMessage());
 
         // JSON mal formado genérico
         ApiError error = buildError(
@@ -119,6 +134,10 @@ public class ApiExceptionHandler {
             IllegalArgumentException ex,
             HttpServletRequest request
     ) {
+        MDC.put("exceptionType", "IllegalArgumentException");
+        MDC.put("exceptionMessage", ex.getMessage());
+        log.warn("Business error: {} - {}", ex.getMessage(), requestPath(request));
+
         ApiError error = buildError(
                 HttpStatus.BAD_REQUEST,
                 ErrorCode.BUSINESS_ERROR,
@@ -136,6 +155,10 @@ public class ApiExceptionHandler {
             EntityNotFoundException ex,
             HttpServletRequest request
     ) {
+        MDC.put("exceptionType", "EntityNotFoundException");
+        MDC.put("exceptionMessage", ex.getMessage());
+        log.warn("Resource not found: {} - {}", ex.getMessage(), requestPath(request));
+
         ApiError error = buildError(
                 HttpStatus.NOT_FOUND,
                 ErrorCode.NOT_FOUND,
@@ -153,6 +176,10 @@ public class ApiExceptionHandler {
             DataIntegrityViolationException ex,
             HttpServletRequest request
     ) {
+        MDC.put("exceptionType", "DataIntegrityViolationException");
+        MDC.put("exceptionMessage", ex.getMessage());
+        log.warn("Data integrity violation: {} - {}", requestPath(request), ex.getMessage());
+
         ApiError error = buildError(
                 HttpStatus.CONFLICT,
                 ErrorCode.CONFLICT,
@@ -170,6 +197,10 @@ public class ApiExceptionHandler {
             ConflictException ex,
             HttpServletRequest request
     ) {
+        MDC.put("exceptionType", "ConflictException");
+        MDC.put("exceptionMessage", ex.getMessage());
+        log.warn("Business conflict: {} - {}", ex.getMessage(), requestPath(request));
+
         ApiError error = buildError(
                 HttpStatus.CONFLICT,
                 ErrorCode.CONFLICT,
@@ -187,6 +218,10 @@ public class ApiExceptionHandler {
             RuntimeException ex,
             HttpServletRequest request
     ) {
+        MDC.put("exceptionType", ex.getClass().getSimpleName());
+        MDC.put("exceptionMessage", "Credenciales inválidas");
+        log.warn("Authentication failed: {} - {}", ex.getClass().getSimpleName(), requestPath(request));
+
         // Mensaje genérico para no filtrar si el usuario existe
         ApiError error = buildError(
                 HttpStatus.UNAUTHORIZED,
@@ -205,6 +240,10 @@ public class ApiExceptionHandler {
             ForbiddenException ex,
             HttpServletRequest request
     ) {
+        MDC.put("exceptionType", "ForbiddenException");
+        MDC.put("exceptionMessage", ex.getMessage());
+        log.warn("Forbidden: {} - {}", ex.getMessage(), requestPath(request));
+
         ApiError error = buildError(
                 HttpStatus.FORBIDDEN,
                 ErrorCode.FORBIDDEN,
@@ -222,7 +261,9 @@ public class ApiExceptionHandler {
             Exception ex,
             HttpServletRequest request
     ) {
-        ex.printStackTrace(); // trace completo en consola
+        MDC.put("exceptionType", "Exception");
+        MDC.put("exceptionMessage", ex.getMessage());
+        log.error("Unhandled exception processing {} {}: {}", request.getMethod(), request.getRequestURI(), ex.getMessage(), ex);
         ApiError error = buildError(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 ErrorCode.INTERNAL_ERROR,

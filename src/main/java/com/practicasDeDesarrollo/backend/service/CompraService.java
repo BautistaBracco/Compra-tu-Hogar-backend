@@ -10,13 +10,16 @@ import com.practicasDeDesarrollo.backend.mapper.PublicacionMapper;
 import com.practicasDeDesarrollo.backend.mapper.UsuarioMapper;
 import com.practicasDeDesarrollo.backend.repository.CompraRepository;
 import com.practicasDeDesarrollo.backend.repository.PublicacionRepository;
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -24,6 +27,7 @@ public class CompraService {
 
     private final CompraRepository compraRepository;
     private final PublicacionRepository publicacionRepository;
+    private final MeterRegistry meterRegistry;
 
     private final PublicacionMapper publicacionMapper;
     private final UsuarioMapper usuarioMapper;
@@ -87,6 +91,12 @@ public class CompraService {
         publicacion.getPropiedad().setVendida(true);
 
         publicacionRepository.save(publicacion);
+
+        meterRegistry.counter("compras.por.inmobiliaria", "inmobiliaria", publicacion.getInmobiliaria().getNombre()).increment();
+        meterRegistry.counter("compras.por.comprador", "comprador", comprador.getNombre()).increment();
+
+        log.info("Purchase completed: publicacionId={}, compradorId={}, precio={}, inmobiliaria={}",
+                publicacionId, comprador.getId(), publicacion.getPrecio(), publicacion.getInmobiliaria().getNombre());
     }
 
     public List<CompraResponse> obtenerCompras(Usuario usuario) {

@@ -19,6 +19,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
+    private final LoggingFilter loggingFilter;
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final AuthenticationProvider authenticationProvider;
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
@@ -38,7 +39,7 @@ public class SecurityConfig {
                         .accessDeniedHandler(restAccessDeniedHandler)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/health", "/auth/**", "/error").permitAll()
+                        .requestMatchers("/health", "/auth/**", "/error", "/actuator/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/publicaciones/**", "/propiedades/**").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/inmobiliaria/**").hasRole("INMOBILIARIA")
@@ -49,6 +50,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider)
+                .addFilterBefore(loggingFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
