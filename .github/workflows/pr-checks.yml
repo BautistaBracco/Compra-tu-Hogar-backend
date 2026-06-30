@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout del código
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup de JDK 21
         uses: actions/setup-java@v4
@@ -36,6 +38,16 @@ jobs:
       # 3. Tests BDD
       - name: Ejecutar Tests BDD
         run: ./gradlew bdd
+
+
+
+      - name: Ejecutar SonarCloud
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          ./gradlew sonar \
+            -Dsonar.token=$SONAR_TOKEN \
+            -Dsonar.qualitygate.wait=true
 
       # Recolectar reportes independientemente de si fallan o pasan
       - name: Subir reportes de tests

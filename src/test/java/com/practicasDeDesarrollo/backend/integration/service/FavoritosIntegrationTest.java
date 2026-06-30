@@ -50,7 +50,7 @@ class FavoritosIntegrationTest {
                 RolUsuario.COMPRADOR
         );
         // A minimal principal object (service re-attaches via repository lookups).
-        comprador = Usuario.builder().id(authComprador.id()).build();
+        comprador = Usuario.builder().id(authComprador.id()).nombre(authComprador.nombre()).build();
 
         var authInmo = usuarioService.createUsuario(
                 new com.practicasDeDesarrollo.backend.dto.request.CreateUsuarioRequest(
@@ -61,7 +61,7 @@ class FavoritosIntegrationTest {
                 ),
                 RolUsuario.INMOBILIARIA
         );
-        inmobiliaria = Usuario.builder().id(authInmo.id()).build();
+        inmobiliaria = Usuario.builder().id(authInmo.id()).nombre(authInmo.nombre()).build();
 
         CreatePropiedadRequest propReq = new CreatePropiedadRequest(
                 TipoPropiedad.DEPTO, "Calle 1", "1", "A", 40, 2, 1, 0, Set.of()

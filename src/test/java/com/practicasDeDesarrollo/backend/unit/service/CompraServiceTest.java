@@ -14,11 +14,13 @@ import com.practicasDeDesarrollo.backend.mapper.UsuarioMapper;
 import com.practicasDeDesarrollo.backend.repository.CompraRepository;
 import com.practicasDeDesarrollo.backend.repository.PublicacionRepository;
 import com.practicasDeDesarrollo.backend.service.CompraService;
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -46,6 +48,8 @@ class CompraServiceTest {
     private PublicacionMapper publicacionMapper;
     @Mock
     private UsuarioMapper usuarioMapper;
+    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
+    private MeterRegistry meterRegistry;
 
     @InjectMocks
     private CompraService compraService;
