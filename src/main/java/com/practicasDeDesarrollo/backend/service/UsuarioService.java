@@ -15,6 +15,7 @@ import com.practicasDeDesarrollo.backend.repository.UsuarioRepository;
 import com.practicasDeDesarrollo.backend.repository.PublicacionRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -25,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -48,6 +50,7 @@ public class UsuarioService {
         usuarioRepository.save(usuario);
         String token = jwtService.generateToken(usuario);
 
+        log.info("User created: email={}, rol={}, userId={}", request.email(), rol, usuario.getId());
         return buildAuthResponse(usuario, token);
     }
 
@@ -59,6 +62,7 @@ public class UsuarioService {
 
         String token = jwtService.generateToken(usuario);
 
+        log.info("User logged in: email={}, userId={}, rol={}", email, usuario.getId(), usuario.getRol());
         return buildAuthResponse(usuario, token);
     }
 

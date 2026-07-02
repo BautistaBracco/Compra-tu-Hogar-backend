@@ -2,838 +2,455 @@ openapi: 3.0.3
 info:
   title: Compra Tu Hogar – API
   description: |
-    API REST del sistema **Compra Tu Hogar (CTH)** para la Cámara Inmobiliaria Argentina.
+    API REST para el sistema **Compra Tu Hogar (CTH)**, desarrollado como proyecto académico.
+    Esta API centraliza la gestión de propiedades, usuarios y operaciones comerciales.
 
-    ## Roles
-    | Rol | Descripción |
-    |-----|-------------|
-    | `comprador` | Consulta propiedades, guarda favoritos, deja reseñas y realiza compras |
-    | `inmobiliaria` | ABM de sus propiedades, consulta ventas y clientes |
-    | `administrador` | Gestión global del sistema y reportes |
+    ### 👥 Roles de Usuario
+    - `COMPRADOR`: Consulta publicaciones, gestiona favoritos, publica reseñas y realiza compras.
+    - `INMOBILIARIA`: Realiza el ABM (Alta, Baja, Modificación) de sus propias publicaciones, consulta sus ventas y gestiona clientes.
+    - `ADMINISTRADOR`: Gestión global, creación de inmobiliarias, mantenimiento del catálogo de características y generación de reportes estadísticos.
 
-    ## Autenticación
-    Todos los endpoints protegidos requieren un token JWT en el header:
-    `Authorization: Bearer <token>`
-  version: 1.0.0
+    ### 🔐 Autenticación
+    Toda la comunicación segura se realiza mediante **JSON Web Tokens (JWT)**.
+    - Para acceder a endpoints protegidos, el cliente debe enviar el token en la cabecera: 
+      `Authorization: Bearer <token>`
+    - El login y el registro público se gestionan desde el controlador `/auth`.
+
+    ### 🏗️ Estructura de la API
+    Los endpoints están agrupados por controladores, reflejando las responsabilidades de cada rol y funcionalidad del sistema.
+  version: 2.1.0
 
 servers:
-  - url: http://localhost:8080/api/v1
+  - url: http://localhost:8080
     description: Desarrollo local
-  - url: https://api.compraturhogar.com/v1
+  - url: https://api.compraturhogar.com
     description: Producción
 
 tags:
   - name: Auth
-    description: Registro e inicio de sesión
+    description: Registro público e inicio de sesión
   - name: Usuarios
-    description: ABM de usuarios (Admin)
-  - name: Compradores
-    description: Operaciones del perfil Comprador
-  - name: Inmobiliarias
-    description: ABM de inmobiliarias y gestión de propiedades
-  - name: Propiedades
-    description: Consulta y búsqueda de propiedades
-  - name: Favoritos
-    description: Propiedades de interés guardadas por un comprador
-  - name: Reseñas
-    description: Puntajes (0–10) y comentarios sobre propiedades favoritas
-  - name: Compras
-    description: ABM de compras realizadas
+    description: Operaciones disponibles para cualquier usuario autenticado
+  - name: Comprador
+    description: Exclusivo rol COMPRADOR
+  - name: Inmobiliaria
+    description: Exclusivo rol INMOBILIARIA
   - name: Admin
-    description: Reportes y estadísticas del sistema
+    description: Exclusivo rol ADMINISTRADOR
+  - name: Health
+    description: Estado del servicio
 
 paths:
-
-  # ══════════════════════════════════════════
+  # ──────────────────────────────────────────
   # AUTH
-  # ══════════════════════════════════════════
+  # ──────────────────────────────────────────
   /auth/register:
     post:
-      tags: [Auth]
-      summary: Registrar nuevo usuario
-      description: Crea un perfil con rol comprador, inmobiliaria o administrador.
+      tags: [ Auth ]
+      summary: Registrar nuevo usuario (rol COMPRADOR)
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UsuarioRegistro'
-            examples:
-              comprador:
-                summary: Registro como comprador
-                value:
-                  nombre: Juan Pérez
-                  mail: juan@mail.com
-                  password: "secret123"
-                  rol: comprador
-              inmobiliaria:
-                summary: Registro como inmobiliaria
-                value:
-                  nombre: RE/MAX Norte
-                  mail: norte@remax.com
-                  password: "secret123"
-                  rol: inmobiliaria
-      responses:
-        '201':
-          description: Usuario creado exitosamente
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UsuarioResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '409':
-          description: El mail ya está registrado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /auth/login:
-    post:
-      tags: [Auth]
-      summary: Iniciar sesión
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [mail, password]
-              properties:
-                mail:
-                  type: string
-                  format: email
-                  example: juan@mail.com
-                password:
-                  type: string
-                  format: password
-                  example: "secret123"
-      responses:
-        '200':
-          description: Login exitoso
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  token:
-                    type: string
-                    description: JWT para usar en Authorization header
-                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-                  usuario:
-                    $ref: '#/components/schemas/UsuarioResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
-  # ══════════════════════════════════════════
-  # USUARIOS (ABM – solo Admin)
-  # ══════════════════════════════════════════
-  /usuarios:
-    get:
-      tags: [Usuarios]
-      summary: Listar todos los usuarios
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: rol
-          in: query
-          description: Filtrar por rol
-          schema:
-            type: string
-            enum: [comprador, inmobiliaria, administrador]
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Size'
-      responses:
-        '200':
-          description: Lista paginada de usuarios
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PageUsuario'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-    post:
-      tags: [Usuarios]
-      summary: Crear usuario (Admin)
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UsuarioRegistro'
+              $ref: '#/components/schemas/CreateUsuarioRequest'
       responses:
         '201':
           description: Usuario creado
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UsuarioResponse'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+                $ref: '#/components/schemas/AuthResponse'
 
-  /usuarios/{id}:
-    get:
-      tags: [Usuarios]
-      summary: Obtener usuario por ID
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-      responses:
-        '200':
-          description: Usuario encontrado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UsuarioResponse'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    put:
-      tags: [Usuarios]
-      summary: Actualizar usuario
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
+  /auth/login:
+    post:
+      tags: [ Auth ]
+      summary: Iniciar sesión
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UsuarioUpdate'
+              $ref: '#/components/schemas/LoginRequest'
       responses:
         '200':
-          description: Usuario actualizado
+          description: Login exitoso
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UsuarioResponse'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    delete:
-      tags: [Usuarios]
-      summary: Eliminar usuario (Admin)
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-      responses:
-        '204':
-          description: Usuario eliminado
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: '#/components/schemas/AuthResponse'
 
-  # ══════════════════════════════════════════
-  # PROPIEDADES (búsqueda pública + ABM vía Inmobiliaria)
-  # ══════════════════════════════════════════
-  /propiedades:
-    get:
-      tags: [Propiedades]
-      summary: Buscar propiedades con filtros avanzados
-      description: |
-        Endpoint público. Permite filtrar por palabra clave, tipo, rango de precios y ubicación.
-        Una misma propiedad puede aparecer ofrecida por más de una inmobiliaria.
-      parameters:
-        - name: q
-          in: query
-          description: Palabra clave (busca en título y descripción)
-          schema:
-            type: string
-        - name: tipo
-          in: query
-          schema:
-            type: string
-            enum: [casa, departamento]
-        - name: precioMin
-          in: query
-          schema:
-            type: number
-            format: double
-        - name: precioMax
-          in: query
-          schema:
-            type: number
-            format: double
-        - name: ubicacion
-          in: query
-          schema:
-            type: string
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Size'
-      responses:
-        '200':
-          description: Resultados paginados
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PagePropiedad'
-
-  /propiedades/{id}:
-    get:
-      tags: [Propiedades]
-      summary: Obtener detalle de una propiedad
-      description: Incluye las inmobiliarias que la ofrecen y las reseñas.
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-      responses:
-        '200':
-          description: Detalle de la propiedad
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PropiedadDetalle'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /propiedades/{id}/resenas:
-    get:
-      tags: [Reseñas]
-      summary: Listar reseñas de una propiedad
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-      responses:
-        '200':
-          description: Lista de reseñas con puntaje y comentario
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Resena'
-
-  # ══════════════════════════════════════════
-  # COMPRADORES
-  # ══════════════════════════════════════════
-  /compradores/{id}:
-    get:
-      tags: [Compradores]
-      summary: Obtener perfil del comprador
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-      responses:
-        '200':
-          description: Perfil del comprador
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UsuarioResponse'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  # ══════════════════════════════════════════
-  # FAVORITOS
-  # ══════════════════════════════════════════
-  /compradores/{id}/favoritos:
-    get:
-      tags: [Favoritos]
-      summary: Listar propiedades de interés del comprador
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-      responses:
-        '200':
-          description: Lista de favoritos
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Favorito'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+  # ──────────────────────────────────────────
+  # USUARIOS
+  # ──────────────────────────────────────────
+  /usuarios/imagen:
     post:
-      tags: [Favoritos]
-      summary: Guardar propiedad como favorito
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
+      tags: [ Usuarios ]
+      summary: Subir imagen
+      security: [{ bearerAuth: [] }]
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
-              required: [propiedadId]
               properties:
-                propiedadId:
-                  type: integer
-                  example: 42
-      responses:
-        '201':
-          description: Propiedad guardada como favorito
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Favorito'
-        '409':
-          description: La propiedad ya está en favoritos
-
-  /compradores/{id}/favoritos/{favoritoId}:
-    delete:
-      tags: [Favoritos]
-      summary: Quitar propiedad de favoritos
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-        - name: favoritoId
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '204':
-          description: Eliminado de favoritos
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  # ══════════════════════════════════════════
-  # RESEÑAS (sobre una propiedad en favoritos)
-  # ══════════════════════════════════════════
-  /compradores/{id}/favoritos/{favoritoId}/resena:
-    get:
-      tags: [Reseñas]
-      summary: Obtener la reseña de una propiedad favorita
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-        - name: favoritoId
-          in: path
-          required: true
-          schema:
-            type: integer
+                file: { type: string, format: binary }
       responses:
         '200':
-          description: Reseña encontrada
+          description: URL de la imagen
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Resena'
-        '404':
-          description: El favorito no tiene reseña aún
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-    post:
-      tags: [Reseñas]
-      summary: Agregar reseña a una propiedad favorita
-      description: |
-        El comprador puede asignar un puntaje (0–10) y dejar un comentario
-        sobre una propiedad que tiene guardada como favorito.
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-        - name: favoritoId
-          in: path
-          required: true
-          schema:
-            type: integer
+              schema: { type: object, properties: { url: { type: string } } }
+
+  /usuarios/perfil:
+    patch:
+      tags: [ Usuarios ]
+      summary: Actualizar perfil
+      security: [{ bearerAuth: [] }]
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ResenaInput'
-            example:
-              puntaje: 8
-              comentario: "Excelente ubicación, muy luminoso."
+              $ref: '#/components/schemas/UpdateUsuarioRequest'
       responses:
-        '201':
+        '200':
+          description: Perfil actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioResponse'
+
+  /usuarios/propiedad/{direccion}:
+    get:
+      tags: [ Usuarios ]
+      summary: Buscar propiedad por dirección
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: direccion
+          in: path
+          required: true
+          schema: { type: string }
+        - name: piso
+          in: query
+          schema: { type: string }
+        - name: depto
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Propiedad encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PropiedadResponse'
+
+  /usuarios/caracteristicas:
+    get:
+      tags: [ Usuarios ]
+      summary: Listar todas las características
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Lista de características
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CaracteristicaResponse'
+
+  /usuarios/publicacion/{id}:
+    get:
+      tags: [ Usuarios ]
+      summary: Obtener publicación por ID
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Detalle de la publicación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicacionResponse'
+
+  /usuarios/publicaciones:
+    get:
+      tags: [ Usuarios ]
+      summary: Buscar publicaciones con filtros
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: vendida
+          in: query
+          schema: { type: boolean }
+        - name: tipo
+          in: query
+          schema: { $ref: '#/components/schemas/TipoPropiedad' }
+        - name: minPrecio
+          in: query
+          schema: { type: number, format: double }
+        - name: maxPrecio
+          in: query
+          schema: { type: number, format: double }
+        - name: ubicacion
+          in: query
+          schema: { type: string }
+        - name: ambientesMin
+          in: query
+          schema: { type: integer }
+        - name: ambientesMax
+          in: query
+          schema: { type: integer }
+        - name: inmobiliariaId
+          in: query
+          schema: { type: integer, format: int64 }
+        - name: caracteristicaIds
+          in: query
+          schema: { type: array, items: { type: integer, format: int64 } }
+      responses:
+        '200':
+          description: Publicaciones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PublicacionResponse'
+
+  /usuarios/publicaciones/{id}/reseñas:
+    get:
+      tags: [ Usuarios ]
+      summary: Listar reseñas
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Reseñas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ResenaResponse'
+
+  # ──────────────────────────────────────────
+  # COMPRADOR
+  # ──────────────────────────────────────────
+  /comprador/favoritos:
+    get:
+      tags: [ Comprador ]
+      summary: Listar favoritos
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Favoritos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PublicacionResponse'
+
+  /comprador/favoritos/{publicacionId}:
+    post:
+      tags: [ Comprador ]
+      summary: Agregar favorito
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: publicacionId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Publicación agregada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicacionResponse'
+    delete:
+      tags: [ Comprador ]
+      summary: Quitar favorito
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: publicacionId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '204':
+          description: Favorito eliminado
+
+  /comprador/reseñas/{publicacionId}:
+    post:
+      tags: [ Comprador ]
+      summary: Agregar reseña
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: publicacionId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateResenaRequest'
+      responses:
+        '200':
           description: Reseña creada
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Resena'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    put:
-      tags: [Reseñas]
-      summary: Modificar reseña existente
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-        - name: favoritoId
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ResenaInput'
-      responses:
-        '200':
-          description: Reseña actualizada
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Resena'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: '#/components/schemas/ResenaResponse'
+
+  /comprador/reseñas/{resenaId}:
     delete:
-      tags: [Reseñas]
+      tags: [ Comprador ]
       summary: Eliminar reseña
-      security:
-        - bearerAuth: []
+      security: [{ bearerAuth: [] }]
       parameters:
-        - $ref: '#/components/parameters/IdPath'
-        - name: favoritoId
+        - name: resenaId
           in: path
           required: true
-          schema:
-            type: integer
+          schema: { type: integer, format: int64 }
       responses:
         '204':
           description: Reseña eliminada
 
-  # ══════════════════════════════════════════
-  # COMPRAS
-  # ══════════════════════════════════════════
-  /compradores/{id}/compras:
-    get:
-      tags: [Compras]
-      summary: Listar compras del comprador
-      security:
-        - bearerAuth: []
+  /comprador/comprar/{publicacionId}:
+    post:
+      tags: [ Comprador ]
+      summary: Comprar propiedad
+      security: [{ bearerAuth: [] }]
       parameters:
-        - $ref: '#/components/parameters/IdPath'
+        - name: publicacionId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
       responses:
         '200':
-          description: Historial de compras
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Compra'
-    post:
-      tags: [Compras]
-      summary: Registrar compra de una propiedad
-      description: |
-        Guarda la compra con el precio al momento de la transacción.
-        Cada compra es de una sola propiedad a la vez.
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [propiedadId, inmobiliariaId]
-              properties:
-                propiedadId:
-                  type: integer
-                inmobiliariaId:
-                  type: integer
-                  description: Inmobiliaria a través de la cual se realiza la compra
-      responses:
-        '201':
           description: Compra registrada
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Compra'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
 
-  /compras/{id}:
+  /comprador/compras:
     get:
-      tags: [Compras]
-      summary: Obtener detalle de una compra
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
+      tags: [ Comprador ]
+      summary: Historial de compras
+      security: [{ bearerAuth: [] }]
       responses:
         '200':
-          description: Detalle de la compra
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Compra'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    put:
-      tags: [Compras]
-      summary: Modificar una compra (Admin)
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CompraUpdate'
-      responses:
-        '200':
-          description: Compra actualizada
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Compra'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    delete:
-      tags: [Compras]
-      summary: Eliminar una compra (Admin)
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-      responses:
-        '204':
-          description: Compra eliminada
-        '403':
-          $ref: '#/components/responses/Forbidden'
-
-  # ══════════════════════════════════════════
-  # INMOBILIARIAS (ABM)
-  # ══════════════════════════════════════════
-  /inmobiliarias:
-    get:
-      tags: [Inmobiliarias]
-      summary: Listar inmobiliarias registradas
-      parameters:
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Size'
-      responses:
-        '200':
-          description: Lista de inmobiliarias
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PageInmobiliaria'
-    post:
-      tags: [Inmobiliarias]
-      summary: Crear inmobiliaria (Admin)
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/InmobiliariaInput'
-      responses:
-        '201':
-          description: Inmobiliaria creada
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Inmobiliaria'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-
-  /inmobiliarias/{id}:
-    get:
-      tags: [Inmobiliarias]
-      summary: Obtener inmobiliaria por ID
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-      responses:
-        '200':
-          description: Inmobiliaria encontrada
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Inmobiliaria'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    put:
-      tags: [Inmobiliarias]
-      summary: Actualizar datos de la inmobiliaria
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/InmobiliariaInput'
-      responses:
-        '200':
-          description: Inmobiliaria actualizada
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Inmobiliaria'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    delete:
-      tags: [Inmobiliarias]
-      summary: Eliminar inmobiliaria (Admin)
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-      responses:
-        '204':
-          description: Inmobiliaria eliminada
-        '403':
-          $ref: '#/components/responses/Forbidden'
-
-  /inmobiliarias/{id}/propiedades:
-    get:
-      tags: [Inmobiliarias]
-      summary: Listar propiedades de la inmobiliaria
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-      responses:
-        '200':
-          description: Lista de propiedades
+          description: Lista de compras
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Propiedad'
+                  $ref: '#/components/schemas/CompraResponse'
+
+  # ──────────────────────────────────────────
+  # INMOBILIARIA
+  # ──────────────────────────────────────────
+  /inmobiliaria/publicacion:
     post:
-      tags: [Inmobiliarias]
-      summary: Agregar propiedad al catálogo
-      description: Una propiedad puede ser ofrecida por más de una inmobiliaria.
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
+      tags: [ Inmobiliaria ]
+      summary: Crear publicación
+      security: [{ bearerAuth: [] }]
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PropiedadInput'
+              $ref: '#/components/schemas/CreatePublicacionRequest'
       responses:
         '201':
-          description: Propiedad agregada
+          description: Publicación creada
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Propiedad'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-
-  /inmobiliarias/{id}/propiedades/{propiedadId}:
-    put:
-      tags: [Inmobiliarias]
-      summary: Modificar datos de una propiedad
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-        - name: propiedadId
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PropiedadInput'
-      responses:
-        '200':
-          description: Propiedad actualizada
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Propiedad'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    delete:
-      tags: [Inmobiliarias]
-      summary: Quitar propiedad del catálogo de la inmobiliaria
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-        - name: propiedadId
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        '204':
-          description: Propiedad removida del catálogo
-        '403':
-          $ref: '#/components/responses/Forbidden'
-
-  /inmobiliarias/{id}/ventas:
+                $ref: '#/components/schemas/PublicacionResponse'
     get:
-      tags: [Inmobiliarias]
-      summary: Consultar ventas realizadas por la inmobiliaria
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/IdPath'
-        - name: desde
-          in: query
-          schema:
-            type: string
-            format: date
-        - name: hasta
-          in: query
-          schema:
-            type: string
-            format: date
+      tags: [ Inmobiliaria ]
+      summary: Listar publicaciones propias
+      security: [{ bearerAuth: [] }]
       responses:
         '200':
-          description: Lista de ventas
+          description: Publicaciones
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Compra'
+                  $ref: '#/components/schemas/PublicacionResponse'
 
-  /inmobiliarias/{id}/clientes:
-    get:
-      tags: [Inmobiliarias]
-      summary: Listar compradores que adquirieron propiedades de esta inmobiliaria
-      security:
-        - bearerAuth: []
+  /inmobiliaria/publicacion/{id}:
+    put:
+      tags: [ Inmobiliaria ]
+      summary: Modificar publicación propia
+      security: [{ bearerAuth: [] }]
       parameters:
-        - $ref: '#/components/parameters/IdPath'
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePublicacionRequest'
       responses:
         '200':
-          description: Lista de clientes
+          description: Publicación actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicacionResponse'
+    delete:
+      tags: [ Inmobiliaria ]
+      summary: Eliminar publicación propia
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '204':
+          description: Publicación eliminada
+
+  /inmobiliaria/ventas:
+    get:
+      tags: [ Inmobiliaria ]
+      summary: Listar ventas
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Ventas realizadas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CompraResponse'
+
+  /inmobiliaria/clientes:
+    get:
+      tags: [ Inmobiliaria ]
+      summary: Listar clientes
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Clientes
           content:
             application/json:
               schema:
@@ -841,531 +458,385 @@ paths:
                 items:
                   $ref: '#/components/schemas/UsuarioResponse'
 
-  # ══════════════════════════════════════════
-  # ADMIN – Consultas y reportes
-  # ══════════════════════════════════════════
-  /admin/compras:
+  # ──────────────────────────────────────────
+  # ADMIN
+  # ──────────────────────────────────────────
+  /admin/usuarios:
     get:
-      tags: [Admin]
-      summary: Listar todas las compras del sistema
-      security:
-        - bearerAuth: []
+      tags: [ Admin ]
+      summary: Listar usuarios por rol
+      security: [{ bearerAuth: [] }]
       parameters:
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Size'
+        - name: rol
+          in: query
+          required: true
+          schema: { $ref: '#/components/schemas/RolUsuario' }
       responses:
         '200':
-          description: Todas las compras registradas
+          description: Usuarios
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PageCompra'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+                type: array
+                items:
+                  $ref: '#/components/schemas/UsuarioResponse'
+
+  /admin/inmobiliaria:
+    post:
+      tags: [ Admin ]
+      summary: Registrar nueva inmobiliaria
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUsuarioRequest'
+      responses:
+        '201':
+          description: Inmobiliaria creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+
+  /admin/caracteristicas:
+    post:
+      tags: [ Admin ]
+      summary: Crear característica
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCaracteristicaRequest'
+      responses:
+        '201':
+          description: Característica creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaracteristicaResponse'
+
+  /admin/reseñas/{usuarioId}:
+    get:
+      tags: [ Admin ]
+      summary: Listar reseñas de usuario
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: usuarioId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Reseñas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ResenaResponse'
 
   /admin/favoritos:
     get:
-      tags: [Admin]
-      summary: Ver todas las propiedades guardadas como favorito
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Size'
+      tags: [ Admin ]
+      summary: Listar publicaciones con favoritos
+      security: [{ bearerAuth: [] }]
       responses:
         '200':
-          description: Lista de favoritos con comprador y propiedad
+          description: Publicaciones
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Favorito'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+                  $ref: '#/components/schemas/PublicacionResponse'
 
-  /admin/resenas:
+  /admin/favoritos/{publicacionId}:
     get:
-      tags: [Admin]
-      summary: Ver todos los puntajes y observaciones del sistema
-      security:
-        - bearerAuth: []
+      tags: [ Admin ]
+      summary: Listar usuarios de favoritos
+      security: [{ bearerAuth: [] }]
       parameters:
-        - name: propiedadId
-          in: query
-          schema:
-            type: integer
-        - name: compradorId
-          in: query
-          schema:
-            type: integer
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/Size'
+        - name: publicacionId
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
       responses:
         '200':
-          description: Lista de reseñas
+          description: Usuarios
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Resena'
-        '403':
-          $ref: '#/components/responses/Forbidden'
+                  $ref: '#/components/schemas/UsuarioResponse'
 
-  /admin/reportes/top-compradores:
+  /admin/compras:
     get:
-      tags: [Admin]
-      summary: Top 5 usuarios con más compras
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 5
-            maximum: 20
+      tags: [ Admin ]
+      summary: Listar todas las compras
+      security: [{ bearerAuth: [] }]
       responses:
         '200':
-          description: Ranking de compradores por cantidad de compras
+          description: Compras
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    posicion:
-                      type: integer
-                    comprador:
-                      $ref: '#/components/schemas/UsuarioResponse'
-                    totalCompras:
-                      type: integer
-        '403':
-          $ref: '#/components/responses/Forbidden'
+                  $ref: '#/components/schemas/CompraResponse'
 
-  /admin/reportes/top-propiedades:
+  /admin/top-usuarios:
     get:
-      tags: [Admin]
-      summary: Top 5 propiedades mejor rankeadas
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 5
-            maximum: 20
+      tags: [ Admin ]
+      summary: Top usuarios
+      security: [{ bearerAuth: [] }]
       responses:
         '200':
-          description: Ranking por puntaje promedio de reseñas
+          description: Ranking
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    posicion:
-                      type: integer
-                    propiedad:
-                      $ref: '#/components/schemas/Propiedad'
-                    puntajePromedio:
-                      type: number
-                      format: double
-                    totalResenas:
-                      type: integer
-        '403':
-          $ref: '#/components/responses/Forbidden'
+                  $ref: '#/components/schemas/TopUserResponse'
 
-  /admin/reportes/top-inmobiliarias:
+  /admin/top-publicaciones:
     get:
-      tags: [Admin]
-      summary: Top 5 inmobiliarias con más ventas
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 5
-            maximum: 20
+      tags: [ Admin ]
+      summary: Top publicaciones
+      security: [{ bearerAuth: [] }]
       responses:
         '200':
-          description: Ranking por cantidad de ventas
+          description: Ranking
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  type: object
-                  properties:
-                    posicion:
-                      type: integer
-                    inmobiliaria:
-                      $ref: '#/components/schemas/Inmobiliaria'
-                    totalVentas:
-                      type: integer
-                    montoTotal:
-                      type: number
-                      format: double
-        '403':
-          $ref: '#/components/responses/Forbidden'
+                  $ref: '#/components/schemas/TopPropertyResponse'
 
-# ══════════════════════════════════════════
-# COMPONENTS
-# ══════════════════════════════════════════
+  /admin/top-inmobiliarias:
+    get:
+      tags: [ Admin ]
+      summary: Top inmobiliarias
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Ranking
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TopAgencyResponse'
+
+  # ──────────────────────────────────────────
+  # HEALTH
+  # ──────────────────────────────────────────
+  /health:
+    get:
+      tags: [ Health ]
+      summary: Estado del servicio
+      responses:
+        '200':
+          description: Servicio OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatusResponse'
+
 components:
-
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: Token JWT obtenido en /auth/login
-
-  parameters:
-    IdPath:
-      name: id
-      in: path
-      required: true
-      description: ID del recurso
-      schema:
-        type: integer
-        example: 1
-    Page:
-      name: page
-      in: query
-      description: Número de página (base 0)
-      schema:
-        type: integer
-        default: 0
-    Size:
-      name: size
-      in: query
-      description: Cantidad de elementos por página
-      schema:
-        type: integer
-        default: 20
-
-  responses:
-    BadRequest:
-      description: Datos inválidos o faltantes
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-          example:
-            message: "El campo 'mail' es requerido"
-            code: 400
-    Unauthorized:
-      description: Token ausente o inválido
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-          example:
-            message: "Token inválido o expirado"
-            code: 401
-    Forbidden:
-      description: El usuario no tiene permisos para esta acción
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-          example:
-            message: "Acción no permitida para este rol"
-            code: 403
-    NotFound:
-      description: Recurso no encontrado
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-          example:
-            message: "Propiedad no encontrada"
-            code: 404
 
   schemas:
+    TipoPropiedad:
+      type: string
+      enum: [ CASA, DEPARTAMENTO ]
 
-    Error:
+    RolUsuario:
+      type: string
+      enum: [ COMPRADOR, INMOBILIARIA, ADMINISTRADOR ]
+
+    CreateUsuarioRequest:
+      type: object
+      required: [ nombre, email, password ]
+      properties:
+        nombre: { type: string }
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+        icono: { type: string }
+
+    LoginRequest:
+      type: object
+      required: [ email, password ]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+
+    UpdateUsuarioRequest:
       type: object
       properties:
-        message:
-          type: string
-        code:
-          type: integer
+        nombre: { type: string }
+        icono: { type: string }
 
-    # ── Usuarios ──
-    UsuarioRegistro:
+    CreateCaracteristicaRequest:
       type: object
-      required: [nombre, mail, password, rol]
+      required: [ nombre ]
       properties:
-        nombre:
-          type: string
-          example: Juan Pérez
-        mail:
-          type: string
-          format: email
-          example: juan@mail.com
-        password:
-          type: string
-          format: password
-          minLength: 8
-        rol:
-          type: string
-          enum: [comprador, inmobiliaria, administrador]
+        nombre: { type: string }
 
-    UsuarioUpdate:
+    CreatePropiedadRequest:
+      type: object
+      required: [ tipo, ubicacion ]
+      properties:
+        tipo: { $ref: '#/components/schemas/TipoPropiedad' }
+        ubicacion: { type: string }
+        piso: { type: string, nullable: true }
+        depto: { type: string, nullable: true }
+        superficie: { type: integer }
+        ambientes: { type: integer }
+        sanitarios: { type: integer }
+        expensas: { type: integer }
+        caracteristicaIds: { type: array, items: { type: integer, format: int64 } }
+
+    CreatePublicacionRequest:
+      type: object
+      required: [ propiedad ]
+      properties:
+        descripcion: { type: string }
+        precio: { type: number, format: double }
+        imagenes: { type: array, items: { type: string } }
+        propiedad: { $ref: '#/components/schemas/CreatePropiedadRequest' }
+
+    UpdatePublicacionRequest:
+      type: object
+      required: [ descripcion, precio ]
+      properties:
+        descripcion: { type: string }
+        precio: { type: number, format: double }
+        imagenes: { type: array, items: { type: string } }
+
+    CreateResenaRequest:
+      type: object
+      required: [ puntaje ]
+      properties:
+        puntaje: { type: integer }
+        comentario: { type: string }
+
+    AuthResponse:
       type: object
       properties:
-        nombre:
-          type: string
-        mail:
-          type: string
-          format: email
-        password:
-          type: string
-          format: password
-          minLength: 8
+        token: { type: string }
+        id: { type: integer, format: int64 }
+        nombre: { type: string }
+        email: { type: string }
+        icono: { type: string }
+        rol: { type: string }
 
     UsuarioResponse:
       type: object
       properties:
-        id:
-          type: integer
-          example: 1
-        nombre:
-          type: string
-          example: Juan Pérez
-        mail:
-          type: string
-          format: email
-        rol:
-          type: string
-          enum: [comprador, inmobiliaria, administrador]
+        id: { type: integer, format: int64 }
+        nombre: { type: string }
+        email: { type: string }
+        icono: { type: string }
 
-    PageUsuario:
+    UsuarioMetadataResponse:
       type: object
       properties:
-        content:
-          type: array
-          items:
-            $ref: '#/components/schemas/UsuarioResponse'
-        totalElements:
-          type: integer
-        totalPages:
-          type: integer
-        page:
-          type: integer
-        size:
-          type: integer
+        esFavorito: { type: boolean }
 
-    # ── Propiedades ──
-    Propiedad:
+    CaracteristicaResponse:
       type: object
       properties:
-        id:
-          type: integer
-        tipo:
-          type: string
-          enum: [casa, departamento]
-        precio:
-          type: number
-          format: double
-          example: 95000.00
-        ubicacion:
-          type: string
-          example: "Palermo, CABA"
-        descripcion:
-          type: string
-          example: "Departamento de 3 ambientes con balcón"
+        id: { type: integer, format: int64 }
+        nombre: { type: string }
 
-    PropiedadDetalle:
-      allOf:
-        - $ref: '#/components/schemas/Propiedad'
-        - type: object
-          properties:
-            inmobiliarias:
-              type: array
-              description: Inmobiliarias que ofrecen esta propiedad
-              items:
-                $ref: '#/components/schemas/Inmobiliaria'
-            resenas:
-              type: array
-              items:
-                $ref: '#/components/schemas/Resena'
-            puntajePromedio:
-              type: number
-              format: double
-
-    PropiedadInput:
-      type: object
-      required: [tipo, precio, ubicacion, descripcion]
-      properties:
-        tipo:
-          type: string
-          enum: [casa, departamento]
-        precio:
-          type: number
-          format: double
-        ubicacion:
-          type: string
-        descripcion:
-          type: string
-
-    PagePropiedad:
+    PropiedadResponse:
       type: object
       properties:
-        content:
-          type: array
-          items:
-            $ref: '#/components/schemas/Propiedad'
-        totalElements:
-          type: integer
-        totalPages:
-          type: integer
-        page:
-          type: integer
-        size:
-          type: integer
+        id: { type: integer, format: int64 }
+        ubicacion: { type: string }
+        piso: { type: string }
+        depto: { type: string }
+        tipo: { $ref: '#/components/schemas/TipoPropiedad' }
+        superficie: { type: integer }
+        ambientes: { type: integer }
+        sanitarios: { type: integer }
+        expensas: { type: integer }
+        vendida: { type: boolean }
+        caracteristicas: { type: array, items: { type: string } }
 
-    # ── Inmobiliarias ──
-    Inmobiliaria:
+    PublicacionResponse:
       type: object
       properties:
-        id:
-          type: integer
-        nombre:
-          type: string
-          example: RE/MAX Norte
-        mail:
-          type: string
-          format: email
+        id: { type: integer, format: int64 }
+        descripcion: { type: string }
+        precio: { type: number, format: double }
+        imagenes: { type: array, items: { type: string } }
+        inmobiliaria: { $ref: '#/components/schemas/UsuarioResponse' }
+        propiedad: { $ref: '#/components/schemas/PropiedadResponse' }
+        metadata: { $ref: '#/components/schemas/UsuarioMetadataResponse' }
 
-    InmobiliariaInput:
-      type: object
-      required: [nombre, mail, password]
-      properties:
-        nombre:
-          type: string
-        mail:
-          type: string
-          format: email
-        password:
-          type: string
-          format: password
-
-    PageInmobiliaria:
+    ResenaResponse:
       type: object
       properties:
-        content:
-          type: array
-          items:
-            $ref: '#/components/schemas/Inmobiliaria'
-        totalElements:
-          type: integer
-        totalPages:
-          type: integer
+        id: { type: integer, format: int64 }
+        puntaje: { type: integer }
+        comentario: { type: string }
+        autorId: { type: integer, format: int64 }
+        autorNombre: { type: string }
+        publicacionId: { type: integer, format: int64 }
 
-    # ── Favoritos ──
-    Favorito:
+    CompraResponse:
       type: object
       properties:
-        id:
-          type: integer
-        comprador:
-          $ref: '#/components/schemas/UsuarioResponse'
-        propiedad:
-          $ref: '#/components/schemas/Propiedad'
-        resena:
-          nullable: true
-          allOf:
-            - $ref: '#/components/schemas/Resena'
-        fechaGuardado:
-          type: string
-          format: date-time
+        id: { type: integer, format: int64 }
+        precioFinal: { type: number, format: double }
+        fechaCompra: { type: string, format: date-time }
+        comprador: { $ref: '#/components/schemas/UsuarioResponse' }
+        publicacion: { $ref: '#/components/schemas/PublicacionResponse' }
 
-    # ── Reseñas ──
-    Resena:
+    TopUserResponse:
       type: object
       properties:
-        id:
-          type: integer
-        puntaje:
-          type: integer
-          minimum: 0
-          maximum: 10
-          example: 8
-        comentario:
-          type: string
-          example: "Excelente ubicación, muy luminoso."
-        comprador:
-          $ref: '#/components/schemas/UsuarioResponse'
-        propiedad:
-          $ref: '#/components/schemas/Propiedad'
-        fecha:
-          type: string
-          format: date-time
+        usuario: { $ref: '#/components/schemas/UsuarioResponse' }
+        comprasCount: { type: integer, format: int64 }
 
-    ResenaInput:
-      type: object
-      required: [puntaje]
-      properties:
-        puntaje:
-          type: integer
-          minimum: 0
-          maximum: 10
-          description: Puntaje de 0 a 10
-        comentario:
-          type: string
-          description: Observación u opinión (opcional)
-
-    # ── Compras ──
-    Compra:
+    TopPropertyResponse:
       type: object
       properties:
-        id:
-          type: integer
-        fecha:
-          type: string
-          format: date-time
-        precioCompra:
-          type: number
-          format: double
-          description: Precio al momento de la compra
-        comprador:
-          $ref: '#/components/schemas/UsuarioResponse'
-        propiedad:
-          $ref: '#/components/schemas/Propiedad'
-        inmobiliaria:
-          $ref: '#/components/schemas/Inmobiliaria'
+        propiedad: { $ref: '#/components/schemas/PropiedadResponse' }
+        averageRating: { type: number, format: double }
 
-    CompraUpdate:
+    TopAgencyResponse:
       type: object
       properties:
-        fecha:
-          type: string
-          format: date-time
-        precioCompra:
-          type: number
-          format: double
+        inmobiliaria: { $ref: '#/components/schemas/UsuarioResponse' }
+        ventasCount: { type: integer, format: int64 }
 
-    PageCompra:
+    HealthStatusResponse:
       type: object
       properties:
-        content:
-          type: array
-          items:
-            $ref: '#/components/schemas/Compra'
-        totalElements:
-          type: integer
-        totalPages:
-          type: integer
-        page:
-          type: integer
-        size:
-          type: integer
+        status: { type: string }
+        database: { type: string }
+        error: { type: string }
+
+    ApiError:
+      type: object
+      properties:
+        timestamp: { type: string, format: date-time }
+        status: { type: integer }
+        error: { type: string }
+        code: { type: string }
+        message: { type: string }
+        path: { type: string }
+        details: { type: object }

@@ -18,11 +18,13 @@ import com.practicasDeDesarrollo.backend.repository.PublicacionRepository;
 import com.practicasDeDesarrollo.backend.repository.UsuarioRepository;
 import com.practicasDeDesarrollo.backend.service.PropiedadService;
 import com.practicasDeDesarrollo.backend.service.PublicacionService;
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -52,6 +54,8 @@ class PublicacionServiceTest {
     private UsuarioRepository usuarioRepository;
     @Mock
     private PublicacionMapper publicacionMapper;
+    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
+    private MeterRegistry meterRegistry;
 
     @InjectMocks
     private PublicacionService publicacionService;

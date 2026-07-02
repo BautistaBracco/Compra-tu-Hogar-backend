@@ -10,9 +10,11 @@ import com.practicasDeDesarrollo.backend.exception.ForbiddenException;
 import com.practicasDeDesarrollo.backend.mapper.PublicacionMapper;
 import com.practicasDeDesarrollo.backend.repository.PublicacionRepository;
 import com.practicasDeDesarrollo.backend.repository.UsuarioRepository;
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +23,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.IntStream;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -30,6 +33,7 @@ public class PublicacionService {
     private final PropiedadService propiedadService;
     private final UsuarioRepository usuarioRepository;
     private final PublicacionMapper publicacionMapper;
+    private final MeterRegistry meterRegistry;
 
     @Transactional(readOnly = true)
     public List<PublicacionResponse> buscarPublicaciones(@NonNull PublicacionSearchParams params, @NonNull Usuario usuario) {
@@ -68,7 +72,10 @@ public class PublicacionService {
         // Seteo de imágenes con orden
         p.setImagenes(crearListaImagenes(request.imagenes(), p));
 
-        return publicacionMapper.toResponse(publicacionRepository.save(p), false);
+        Publicacion saved = publicacionRepository.save(p);
+        meterRegistry.counter("publicaciones.por.inmobiliaria", "inmobiliaria", inmobiliaria.getNombre()).increment();
+        log.info("Publication created: id={}, inmobiliariaId={}, precio={}", saved.getId(), inmobiliaria.getId(), request.precio());
+        return publicacionMapper.toResponse(saved, false);
     }
 
     public PublicacionResponse modificarPublicacion(Long id, UpdatePublicacionRequest request, Usuario inmobiliaria) {
@@ -83,7 +90,9 @@ public class PublicacionService {
             actualizarImagenes(p, request.imagenes());
         }
 
-        return publicacionMapper.toResponse(publicacionRepository.save(p), false);
+        Publicacion saved = publicacionRepository.save(p);
+        log.info("Publication updated: id={}, inmobiliariaId={}", id, inmobiliaria.getId());
+        return publicacionMapper.toResponse(saved, false);
     }
 
     public void eliminarPublicacion(Long id, @NonNull Usuario inmobiliaria) {
@@ -91,6 +100,7 @@ public class PublicacionService {
 
         validarAutoria(p, inmobiliaria);
         publicacionRepository.delete(p);
+        log.info("Publication deleted: id={}, inmobiliariaId={}", id, inmobiliaria.getId());
     }
 
     public List<PublicacionResponse> listarPublicaciones(Usuario usuario) {

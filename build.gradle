@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '4.0.5'
     id 'io.spring.dependency-management' version '1.1.7'
+    id("org.sonarqube") version "7.3.1.8318"
 }
 
 group = 'com.practicasDeDesarrollo'
@@ -18,10 +19,12 @@ repositories {
 }
 
 dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'com.mysql:mysql-connector-j'
@@ -44,6 +47,7 @@ dependencies {
     implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+    implementation 'net.logstash.logback:logstash-logback-encoder:8.0'
 }
 sourceSets {
     unitTest {
@@ -130,4 +134,18 @@ tasks.register('bdd', Test) {
 // (Opcional) Hacemos que el comando './gradlew check' o 'build' corra TODO
 tasks.named('check') {
     dependsOn tasks.named('integration'), tasks.named('bdd')
+}
+
+
+sonar {
+    properties {
+        property("sonar.projectKey", "Compra-tu-Hogar-backend")
+        property("sonar.organization", "bautistabracco")
+        property("sonar.host.url", "https://sonarcloud.io")
+
+        property(
+                "sonar.coverage.exclusions",
+                "**/*Config.java,**/*Filter.java,**/exception/**,**/logging/**,**/*Metrics*,**/service/**"
+        )
+    }
 }
