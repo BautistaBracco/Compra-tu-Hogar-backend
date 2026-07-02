@@ -2,10 +2,8 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Trend } from 'k6/metrics';
 import { BASE_URL, baseStages, buildOptions } from '../lib/config.js';
-import { requestParams } from '../lib/http.js';
+import { requestParams, buildPool, pickRandom } from '../lib/utils.js';
 import { registerComprador } from '../lib/auth.js';
-import { buildPool } from '../lib/pool.js';
-import { pickRandom } from '../lib/random.js';
 
 const POOL_SIZE = 5;
 const favoritosDuration = new Trend('fav_list_duration', true);

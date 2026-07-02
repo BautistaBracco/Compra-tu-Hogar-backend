@@ -2,10 +2,8 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Trend } from 'k6/metrics';
 import { BASE_URL, baseStages, buildOptions } from '../lib/config.js';
-import { requestParams, postJson } from '../lib/http.js';
-import { login, registerComprador, registerInmobiliaria } from '../lib/auth.js';
-import { buildPool } from '../lib/pool.js';
-import { pickRandom } from '../lib/random.js';
+import { requestParams, postJson, buildPool, pickRandom } from '../lib/utils.js';
+import { getAuthToken, registerComprador, registerInmobiliaria } from '../lib/auth.js';
 
 const POOL_SIZE = 5;
 const cargaPropiedadDuration = new Trend('carga_propiedad_duration', true);
@@ -17,14 +15,14 @@ export const options = buildOptions(baseStages, {
 });
 
 export function setup() {
-  const admin = login('juan@gmail.com', '12345678');
+  const admin = getAuthToken('ADMIN');
 
   const compradores = buildPool(POOL_SIZE, (i, suffix) =>
     registerComprador(`Comprador ${i}`, `comp_stress_${suffix}_${i}@test.com`, '12345678')
   );
 
   const inmobiliarias = buildPool(POOL_SIZE, (i, suffix) =>
-    registerInmobiliaria(`Inmobiliaria ${i}`, `inmo_stress_${suffix}_${i}@test.com`, '12345678', admin.token)
+    registerInmobiliaria(`Inmobiliaria ${i}`, `inmo_stress_${suffix}_${i}@test.com`, '12345678', admin)
   );
 
   return { compradores, inmobiliarias };

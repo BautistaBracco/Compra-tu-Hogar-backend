@@ -44,7 +44,6 @@ public class AuthSteps {
         body.put("nombre", "User");
         body.put("email", email);
         body.put("password", password);
-        // Avoid Map.of(..., null) NPE; explicit null is fine for JSON.
         body.put("icono", null);
 
         ResponseEntity<String> resp = http.postJson(
