@@ -43,14 +43,23 @@ services:
     build:
       context: ../Compra-tu-Hogar-frontend
       dockerfile: Dockerfile
+      target: build # <-- Le dice a Docker que se detenga en la etapa de Node y no use Nginx
     container_name: node-frontend
     ports:
-      - "5173:80"
+      - "5173:5173" # <-- Cambiado al puerto de desarrollo de Vite
+    volumes:
+      - ../Compra-tu-Hogar-frontend:/app # <-- Sincroniza tus cambios de código de Windows
+      - /app/node_modules # <-- Protege tus dependencias
+    environment:
+      - VITE_API_URL=/api/v1
+    # <-- Sobrescribe el comando de producción para iniciar el servidor de desarrollo de Vite
+    command: npm run dev -- --host 0.0.0.0
     depends_on:
       backend:
-        condition: service_healthy # El frontend no arranca hasta que Spring esté SANO
+        condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost/ || exit 1"]
+      # <-- Ahora el curl verifica el puerto de desarrollo 5173 en lugar del 80
+      test: ["CMD-SHELL", "curl -f http://localhost:5173/ || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 6
