@@ -1,10 +1,8 @@
 import { check, sleep } from 'k6';
 import { Trend } from 'k6/metrics';
 import { BASE_URL, baseStages, buildOptions } from '../lib/config.js';
-import { postJson } from '../lib/http.js';
+import { postJson, buildPool, pickRandom } from '../lib/utils.js';
 import { registerComprador } from '../lib/auth.js';
-import { buildPool } from '../lib/pool.js';
-import { pickRandom } from '../lib/random.js';
 
 const POOL_SIZE = 5;
 const loginDuration = new Trend('login_duration', true);

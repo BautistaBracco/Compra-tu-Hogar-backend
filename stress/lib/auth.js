@@ -1,12 +1,21 @@
 import { BASE_URL } from './config.js';
-import { postJson } from './http.js';
-import { CREDENTIALS_MAP } from './credentials.js';
+import { postJson } from './utils.js';
 
-export function login(email, password) {
-  return postJson(`${BASE_URL}/auth/login`, { email, password }).json();
-}
+const CREDENTIALS_MAP = {
+  ADMIN: {
+    email: 'juan@gmail.com',
+    password: '12345678',
+  },
+  COMPRADOR: {
+    email: 'nestor@gmail.com',
+    password: '12345678',
+  },
+  INMOBILIARIA: {
+    email: 'InmobiliariaAlfonso@gmail.com',
+    password: '12345678',
+  },
+};
 
-// Login contra un rol predefinido en CREDENTIALS_MAP, devuelve solo el token (o null si falla).
 export function getAuthToken(rol) {
   const creds = CREDENTIALS_MAP[rol];
   if (!creds) {

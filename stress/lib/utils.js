@@ -13,3 +13,18 @@ export function requestParams(token) {
 export function postJson(url, body, token) {
   return http.post(url, JSON.stringify(body), requestParams(token));
 }
+
+export function buildPool(size, factory) {
+  const suffix = Date.now();
+  const pool = [];
+
+  for (let i = 0; i < size; i++) {
+    pool.push(factory(i, suffix));
+  }
+
+  return pool;
+}
+
+export function pickRandom(items) {
+  return items[Math.floor(Math.random() * items.length)];
+}
