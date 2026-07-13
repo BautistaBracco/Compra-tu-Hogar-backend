@@ -1,6 +1,7 @@
+import http from 'k6/http';
 import {check, sleep} from 'k6';
 import {BASE_URL, baseStages, buildOptions} from '../lib/config.js';
-import {postJson, buildPool, pickRandom} from '../lib/utils.js';
+import {requestParams, postJson, buildPool, pickRandom} from '../lib/utils.js';
 import {getAuthToken, registerComprador, registerInmobiliaria} from '../lib/auth.js';
 import {publicacionPayload} from '../lib/property.js';
 
@@ -33,19 +34,16 @@ export default function ({compradores, inmobiliarias}) {
         return;
     }
 
-    const compraRes = crearCompra(comprador.token);
+    const compraRes = http.post(
+        `${BASE_URL}/comprador/comprar/${createRes.json('id')}`,
+        null,
+        requestParams(comprador.token)
+    );
 
     check(compraRes, {'compra exitosa': (r) => r.status === 200});
     sleep(1);
 }
 
-function crearCompra(token) {
-    return postJson(
-        `${BASE_URL}/comprador/comprar`,
-        {token},
-        token
-    );
-}
 
 function crearPublicacion(token) {
     return postJson(
