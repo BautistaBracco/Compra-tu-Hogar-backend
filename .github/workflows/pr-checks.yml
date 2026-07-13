@@ -27,20 +27,20 @@ jobs:
       - name: Permisos para Gradle Wrapper
         run: chmod +x ./gradlew
 
-      # 1. Tests Unitarios
+      # Tests Unitarios
       - name: Ejecutar Tests Unitarios
         run: ./gradlew test
 
-      # 2. Tests de Integración
+      # Tests de Integración
       - name: Ejecutar Tests de Integración
         run: ./gradlew integration
 
-      # 3. Tests BDD
+      # Tests BDD
       - name: Ejecutar Tests BDD
         run: ./gradlew bdd
 
 
-
+      # SonarCloud Analysis
       - name: Ejecutar SonarCloud
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -48,13 +48,3 @@ jobs:
           ./gradlew sonar \
             -Dsonar.token=$SONAR_TOKEN \
             -Dsonar.qualitygate.wait=true
-
-      # Recolectar reportes independientemente de si fallan o pasan
-      - name: Subir reportes de tests
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: test-reports
-          path: |
-            build/reports/tests/
-            build/test-results/

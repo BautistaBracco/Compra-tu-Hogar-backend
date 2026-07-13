@@ -1,6 +1,8 @@
 package com.practicasDeDesarrollo.backend.bdd.steps;
 
+import com.practicasDeDesarrollo.backend.bdd.support.BddPayloads;
 import com.practicasDeDesarrollo.backend.bdd.support.BddWorld;
+import com.practicasDeDesarrollo.backend.bdd.support.Endpoints;
 import com.practicasDeDesarrollo.backend.bdd.support.TestHttpClient;
 import com.practicasDeDesarrollo.backend.repository.UsuarioRepository;
 import io.cucumber.java.en.And;
@@ -8,12 +10,8 @@ import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
-
-import java.util.HashMap;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -22,7 +20,6 @@ public class AuthSteps {
     private final UsuarioRepository usuarioRepository;
     private final TestHttpClient http;
     private final BddWorld world;
-
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public AuthSteps(UsuarioRepository usuarioRepository, TestHttpClient http, BddWorld world) {
@@ -38,51 +35,22 @@ public class AuthSteps {
 
     @Given("que existe un usuario con email {string} y contraseña {string}")
     public void que_existe_un_usuario_con_email_y_contrasena(String email, String password) {
-        world.lastEmail = email;
-
-        Map<String, Object> body = new HashMap<>();
-        body.put("nombre", "User");
-        body.put("email", email);
-        body.put("password", password);
-        body.put("icono", null);
-
-        ResponseEntity<String> resp = http.postJson(
-                "/api/v1/auth/register",
-                null,
-                body
-        );
-        assertEquals(HttpStatus.CREATED, resp.getStatusCode());
+        assertEquals(HttpStatus.CREATED, http.postJson(
+                Endpoints.AUTH_REGISTER, null, BddPayloads.registroHttp("User", email, password)
+        ).getStatusCode());
     }
 
-    @When("una inmobiliaria se registra con nombre {string}, email {string} y contraseña {string}")
-    public void una_inmobiliaria_se_registra_con_nombre_email_y_contrasena(String nombre, String email, String password) {
-        // El endpoint público registra COMPRADOR, pero para este escenario solo nos interesa el flujo de auth/token.
-        world.lastEmail = email;
-
-        Map<String, Object> body = new HashMap<>();
-        body.put("nombre", nombre);
-        body.put("email", email);
-        body.put("password", password);
-        body.put("icono", null);
-
+    @When("se registra con nombre {string}, email {string} y contraseña {string}")
+    public void se_registra(String nombre, String email, String password) {
         world.lastResponse = http.postJson(
-                "/api/v1/auth/register",
-                null,
-                body
+                Endpoints.AUTH_REGISTER, null, BddPayloads.registroHttp(nombre, email, password)
         );
     }
 
-    @When("intenta hacer login con contraseña {string}")
-    public void intenta_hacer_login_con_contrasena(String password) {
-        // Use the last email created in the scenario, falling back to the legacy hardcoded one.
-        String email = (world.lastEmail != null) ? world.lastEmail : "user@test.com";
+    @When("intenta hacer login con email {string} y contraseña {string}")
+    public void intenta_hacer_login(String email, String password) {
         world.lastResponse = http.postJson(
-                "/api/v1/auth/login",
-                null,
-                Map.of(
-                        "email", email,
-                        "password", password
-                )
+                Endpoints.AUTH_LOGIN, null, BddPayloads.login(email, password)
         );
     }
 
