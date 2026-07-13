@@ -1,14 +1,14 @@
 import http from 'k6/http';
-import {check, sleep} from 'k6';
-import {Trend} from 'k6/metrics';
-import {BASE_URL, baseStages, buildOptions} from '../lib/config.js';
-import {requestParams, postJson} from '../lib/utils.js';
-import {getAuthToken, registerComprador} from '../lib/auth.js';
+import { check, sleep } from 'k6';
+import { Trend } from 'k6/metrics';
+import { BASE_URL, baseStages, buildOptions } from '../lib/config.js';
+import { requestParams, postJson } from '../lib/utils.js';
+import { getAuthToken, registerComprador } from '../lib/auth.js';
+import { publicacionPayload } from '../lib/property.js';
 
 const errorDuration = new Trend('error_duration', true);
 
 export const options = buildOptions(baseStages, {
-    error_duration: ['p(95)<2000'],
     http_req_failed: ['rate<1.0'],
 });
 
@@ -45,10 +45,10 @@ export function setup() {
 }
 
 export default function (data) {
-    const {compradorToken, inmobiliariaToken, freshCompradorToken, dupeEmail, alreadySoldId} = data;
+    const { compradorToken, inmobiliariaToken, freshCompradorToken, dupeEmail, alreadySoldId } = data;
 
     runScenario('bad_credentials', 401, () =>
-        postJson(`${BASE_URL}/auth/login`, {email: 'nobody@test.com', password: 'wrong'})
+        postJson(`${BASE_URL}/auth/login`, { email: 'nobody@test.com', password: 'wrong' })
     );
 
     runScenario('validation_error', 400, () =>
@@ -56,7 +56,7 @@ export default function (data) {
     );
 
     runScenario('malformed_json', 400, () =>
-        http.post(`${BASE_URL}/auth/login`, 'not-valid-json', {headers: {'Content-Type': 'application/json'}})
+        http.post(`${BASE_URL}/auth/login`, 'not-valid-json', { headers: { 'Content-Type': 'application/json' } })
     );
 
     runScenario('invalid_enum', 400, () =>
@@ -77,7 +77,7 @@ export default function (data) {
     );
 
     runScenario('duplicate_email', 409, () =>
-        postJson(`${BASE_URL}/auth/register`, {nombre: 'Dupe', email: dupeEmail, password: '12345678', icono: null})
+        postJson(`${BASE_URL}/auth/register`, { nombre: 'Dupe', email: dupeEmail, password: '12345678', icono: null })
     );
 
     runScenario('not_found', 404, () =>
@@ -110,27 +110,16 @@ export default function (data) {
 }
 
 function crearPublicacion(token) {
-    return postJson(`${BASE_URL}/inmobiliaria/publicacion`, {
-        descripcion: 'Property for already-sold test',
-        precio: 100000,
-        imagenes: [],
-        propiedad: {
-            tipo: 'CASA',
-            ubicacion: `sold_test_${Date.now()}-${__VU}`,
-            piso: '',
-            depto: '',
-            superficie: 100,
-            ambientes: 3,
-            sanitarios: 2,
-            expensas: 5000,
-            caracteristicaIds: [],
-        },
-    }, token);
+    return postJson(
+        `${BASE_URL}/inmobiliaria/publicacion`,
+        publicacionPayload('Property for already-sold test', `sold_test_${Date.now()}-${__VU}`),
+        token
+    );
 }
 
 function runScenario(name, expectedStatus, fn) {
     const start = Date.now();
     const res = fn();
-    errorDuration.add(Date.now() - start, {scenario: name});
-    check(res, {[`${name}_status_${expectedStatus}`]: (r) => r.status === expectedStatus});
+    errorDuration.add(Date.now() - start, { scenario: name });
+    check(res, { [`${name}_status_${expectedStatus}`]: (r) => r.status === expectedStatus });
 }

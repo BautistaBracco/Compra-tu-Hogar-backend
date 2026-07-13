@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.practicasDeDesarrollo.backend.unit.support.TestFixtures.caracteristica;
+import static com.practicasDeDesarrollo.backend.unit.support.TestFixtures.propiedadBase;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -42,28 +44,11 @@ class PropiedadServiceTest {
     @InjectMocks
     private PropiedadService propiedadService;
 
-    private Propiedad propiedadBase(Set<Caracteristica> caracs) {
-        return Propiedad.builder()
-                .id(1L)
-                .tipo(TipoPropiedad.DEPTO)
-                .ubicacion("AV. MITRE 123")
-                .piso("4")
-                .depto("A")
-                .superficie(50)
-                .ambientes(2)
-                .sanitarios(1)
-                .expensas(15000)
-                .vendida(false)
-                .caracteristicas(caracs)
-                .build();
-    }
-
     @Nested
     @DisplayName("buscarOCrear")
     class BuscarOCrear {
 
         @Test
-        @DisplayName("normaliza ubicación/piso/depto y guarda si no existe")
         void normaliza_y_guarda_si_no_existe() {
             CreatePropiedadRequest req = new CreatePropiedadRequest(
                     TipoPropiedad.DEPTO, "  av. mitre 123  ", " 4 ", " a ",
@@ -83,8 +68,7 @@ class PropiedadServiceTest {
         }
 
         @Test
-        @DisplayName("convierte piso/depto null a string vacío")
-        void null_a_vacio_en_piso_y_depto() {
+        void convierte_piso_y_depto_null_a_vacio() {
             CreatePropiedadRequest req = new CreatePropiedadRequest(
                     TipoPropiedad.CASA, "Calle Falsa 123", null, null,
                     100, 4, 2, 0, Set.of()
@@ -100,44 +84,37 @@ class PropiedadServiceTest {
         }
 
         @Test
-        @DisplayName("si existe y coincide devuelve la existente y no guarda")
-        void si_existe_y_coincide_devuelve_existente() {
+        void devuelve_existente_si_coincide_y_no_guarda() {
             Propiedad existente = propiedadBase(Set.of());
             when(propiedadRepository.findByUbicacionAndPisoAndDepto("AV. MITRE 123", "4", "A"))
                     .thenReturn(Optional.of(existente));
 
-            CreatePropiedadRequest req = new CreatePropiedadRequest(
+            Propiedad res = propiedadService.buscarOCrear(new CreatePropiedadRequest(
                     TipoPropiedad.DEPTO, "av. mitre 123", "4", "a",
                     50, 2, 1, 15000, Set.of()
-            );
-
-            Propiedad res = propiedadService.buscarOCrear(req);
+            ));
 
             assertSame(existente, res);
             verify(propiedadRepository, never()).save(any());
         }
 
         @Test
-        @DisplayName("si existe con datos distintos lanza ConflictException")
-        void si_existe_con_datos_distintos_lanza_conflict() {
+        void lanza_conflict_si_existe_con_datos_distintos() {
             Propiedad existente = propiedadBase(Set.of());
             when(propiedadRepository.findByUbicacionAndPisoAndDepto("AV. MITRE 123", "4", "A"))
                     .thenReturn(Optional.of(existente));
 
-            CreatePropiedadRequest req = new CreatePropiedadRequest(
-                    TipoPropiedad.DEPTO, "av. mitre 123", "4", "a",
-                    999, 2, 1, 15000, Set.of()
-            );
-
-            ConflictException ex = assertThrows(ConflictException.class, () -> propiedadService.buscarOCrear(req));
+            ConflictException ex = assertThrows(ConflictException.class, () -> propiedadService.buscarOCrear(
+                    new CreatePropiedadRequest(TipoPropiedad.DEPTO, "av. mitre 123", "4", "a",
+                            999, 2, 1, 15000, Set.of())
+            ));
             assertTrue(ex.getMessage().toLowerCase().contains("datos distintos"));
             verify(propiedadRepository, never()).save(any());
         }
 
         @Test
-        @DisplayName("resuelve características por IDs y las asigna a la nueva propiedad")
         void resuelve_y_asigna_caracteristicas() {
-            Caracteristica cochera = Caracteristica.builder().id(1L).nombre("COCHERA").build();
+            Caracteristica cochera = caracteristica(1L, "COCHERA");
             CreatePropiedadRequest req = new CreatePropiedadRequest(
                     TipoPropiedad.DEPTO, "dir 2", "2", "B",
                     40, 2, 1, 0, Set.of(1L)
@@ -153,14 +130,13 @@ class PropiedadServiceTest {
         }
 
         @Test
-        @DisplayName("lanza EntityNotFoundException si falta alguna característica del catálogo")
-        void lanza_si_falta_alguna_caracteristica() {
+        void lanza_notfound_si_falta_caracteristica_del_catalogo() {
             CreatePropiedadRequest req = new CreatePropiedadRequest(
                     TipoPropiedad.DEPTO, "dir 1", "1", "A",
                     40, 2, 1, 0, Set.of(1L, 99L)
             );
             when(caracteristicaRepository.findAllById(Set.of(1L, 99L)))
-                    .thenReturn(List.of(Caracteristica.builder().id(1L).nombre("COCHERA").build()));
+                    .thenReturn(List.of(caracteristica(1L, "COCHERA")));
 
             EntityNotFoundException ex = assertThrows(EntityNotFoundException.class, () -> propiedadService.buscarOCrear(req));
             assertTrue(ex.getMessage().toLowerCase().contains("caracter"));
@@ -168,7 +144,6 @@ class PropiedadServiceTest {
         }
 
         @Test
-        @DisplayName("no consulta características si caracteristicaIds es null")
         void no_consulta_caracteristicas_si_null() {
             CreatePropiedadRequest req = new CreatePropiedadRequest(
                     TipoPropiedad.CASA, "dir 3", null, null,
@@ -189,8 +164,7 @@ class PropiedadServiceTest {
     class BuscarPorUbicacion {
 
         @Test
-        @DisplayName("normaliza argumentos antes de consultar repositorio")
-        void normaliza_argumentos() {
+        void normaliza_argumentos_antes_de_consultar() {
             when(propiedadRepository.findByUbicacionAndPisoAndDepto("AV. LIBERTAD 1", "3", "C"))
                     .thenReturn(Optional.empty());
 
@@ -200,8 +174,7 @@ class PropiedadServiceTest {
         }
 
         @Test
-        @DisplayName("retorna Optional.empty si no existe")
-        void retorna_empty() {
+        void retorna_empty_si_no_existe() {
             when(propiedadRepository.findByUbicacionAndPisoAndDepto(anyString(), anyString(), anyString()))
                     .thenReturn(Optional.empty());
 
@@ -212,16 +185,13 @@ class PropiedadServiceTest {
         }
 
         @Test
-        @DisplayName("mapea y retorna si existe")
         void mapea_y_retorna_si_existe() {
             Propiedad existente = propiedadBase(Set.of());
             when(propiedadRepository.findByUbicacionAndPisoAndDepto("DIR", "", ""))
                     .thenReturn(Optional.of(existente));
-
-            PropiedadResponse resp = new PropiedadResponse(
+            when(propiedadMapper.toResponse(existente)).thenReturn(new PropiedadResponse(
                     1L, "DIR", "", "", TipoPropiedad.DEPTO, 50, 2, 1, 15000, false, Set.of()
-            );
-            when(propiedadMapper.toResponse(existente)).thenReturn(resp);
+            ));
 
             Optional<PropiedadResponse> res = propiedadService.buscarPorUbicacion("dir", null, null, null);
 

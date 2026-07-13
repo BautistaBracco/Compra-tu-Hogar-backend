@@ -5,11 +5,9 @@ import com.practicasDeDesarrollo.backend.dto.request.CreatePublicacionRequest;
 import com.practicasDeDesarrollo.backend.dto.request.PublicacionSearchParams;
 import com.practicasDeDesarrollo.backend.dto.request.UpdatePublicacionRequest;
 import com.practicasDeDesarrollo.backend.dto.response.PublicacionResponse;
-import com.practicasDeDesarrollo.backend.entity.Imagen;
 import com.practicasDeDesarrollo.backend.entity.Propiedad;
 import com.practicasDeDesarrollo.backend.entity.Publicacion;
 import com.practicasDeDesarrollo.backend.entity.Usuario;
-import com.practicasDeDesarrollo.backend.entity.enums.RolUsuario;
 import com.practicasDeDesarrollo.backend.entity.enums.TipoPropiedad;
 import com.practicasDeDesarrollo.backend.exception.ConflictException;
 import com.practicasDeDesarrollo.backend.exception.ForbiddenException;
@@ -36,10 +34,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import static com.practicasDeDesarrollo.backend.unit.support.TestFixtures.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -60,51 +59,7 @@ class PublicacionServiceTest {
     @InjectMocks
     private PublicacionService publicacionService;
 
-    // ─── Fixtures ─────────────────────────────────────────────────────────────
-
-    private Usuario inmobiliaria(Long id) {
-        return Usuario.builder()
-                .id(id)
-                .nombre("Inmo " + id)
-                .email("inmo" + id + "@test.com")
-                .password("pass")
-                .rol(RolUsuario.INMOBILIARIA)
-                .build();
-    }
-
-    private Propiedad propiedadDisponible() {
-        return Propiedad.builder()
-                .id(10L)
-                .tipo(TipoPropiedad.DEPTO)
-                .ubicacion("AV. MITRE 123")
-                .piso("4").depto("A")
-                .superficie(50).ambientes(2).sanitarios(1).expensas(15000)
-                .vendida(false)
-                .caracteristicas(Set.of())
-                .build();
-    }
-
-    private Propiedad propiedadVendida() {
-        Propiedad p = propiedadDisponible();
-        p.setVendida(true);
-        return p;
-    }
-
-    private Publicacion publicacionConDueno(Long pubId, Usuario dueno, Propiedad propiedad) {
-        return Publicacion.builder()
-                .id(pubId)
-                .descripcion("Descripción original")
-                .precio(new BigDecimal("85000.00"))
-                .inmobiliaria(dueno)
-                .propiedad(propiedad)
-                .imagenes(new ArrayList<>(List.of(
-                        Imagen.builder().id(1L).url("img1.jpg").orden(1).build(),
-                        Imagen.builder().id(2L).url("img2.jpg").orden(2).build()
-                )))
-                .build();
-    }
-
-    private CreatePublicacionRequest requestBase(Propiedad ignorado) {
+    private CreatePublicacionRequest requestBase() {
         CreatePropiedadRequest propReq = new CreatePropiedadRequest(
                 TipoPropiedad.DEPTO, "av. mitre 123", "4", "a", 50, 2, 1, 15000, Set.of()
         );
@@ -116,14 +71,11 @@ class PublicacionServiceTest {
         );
     }
 
-    // ─── createPublicacion ────────────────────────────────────────────────────
-
     @Nested
     @DisplayName("createPublicacion")
     class CreatePublicacion {
 
         @Test
-        @DisplayName("debería persistir la publicación con imágenes en orden correcto")
         void deberia_persistir_con_imagenes_en_orden() {
             Usuario inmo = inmobiliaria(1L);
             Propiedad propiedad = propiedadDisponible();
@@ -135,7 +87,7 @@ class PublicacionServiceTest {
             when(publicacionMapper.toResponse(any(Publicacion.class), eq(false)))
                     .thenReturn(mock(PublicacionResponse.class));
 
-            publicacionService.createPublicacion(requestBase(propiedad), inmo);
+            publicacionService.createPublicacion(requestBase(), inmo);
 
             ArgumentCaptor<Publicacion> captor = ArgumentCaptor.forClass(Publicacion.class);
             verify(publicacionRepository).save(captor.capture());
@@ -151,21 +103,18 @@ class PublicacionServiceTest {
         }
 
         @Test
-        @DisplayName("debería lanzar ConflictException si la propiedad ya fue vendida")
-        void deberia_lanzar_ConflictException_si_propiedad_vendida() {
-            Usuario inmo = inmobiliaria(1L);
+        void lanza_conflict_si_propiedad_vendida() {
             when(propiedadService.buscarOCrear(any())).thenReturn(propiedadVendida());
 
             ConflictException ex = assertThrows(ConflictException.class,
-                    () -> publicacionService.createPublicacion(requestBase(null), inmo));
+                    () -> publicacionService.createPublicacion(requestBase(), inmobiliaria(1L)));
 
             assertEquals("La propiedad ya fue vendida", ex.getMessage());
             verify(publicacionRepository, never()).save(any());
         }
 
         @Test
-        @DisplayName("debería lanzar ConflictException si ya hiciste una publicación para esa propiedad")
-        void deberia_lanzar_ConflictException_si_publicacion_duplicada() {
+        void lanza_conflict_si_publicacion_duplicada() {
             Usuario inmo = inmobiliaria(1L);
             Propiedad propiedad = propiedadDisponible();
             Publicacion existente = publicacionConDueno(5L, inmo, propiedad);
@@ -175,22 +124,19 @@ class PublicacionServiceTest {
                     .thenReturn(Optional.of(existente));
 
             ConflictException ex = assertThrows(ConflictException.class,
-                    () -> publicacionService.createPublicacion(requestBase(propiedad), inmo));
+                    () -> publicacionService.createPublicacion(requestBase(), inmo));
 
             assertEquals("Ya hiciste una publicación para esta propiedad", ex.getMessage());
             verify(publicacionRepository, never()).save(any());
         }
     }
 
-    // ─── modificarPublicacion ─────────────────────────────────────────────────
-
     @Nested
     @DisplayName("modificarPublicacion")
     class ModificarPublicacion {
 
         @Test
-        @DisplayName("debería actualizar descripción y precio")
-        void deberia_actualizar_descripcion_y_precio() {
+        void actualiza_descripcion_y_precio() {
             Usuario inmo = inmobiliaria(1L);
             Publicacion pub = publicacionConDueno(5L, inmo, propiedadDisponible());
 
@@ -199,76 +145,67 @@ class PublicacionServiceTest {
             when(publicacionMapper.toResponse(any(Publicacion.class), eq(false)))
                     .thenReturn(mock(PublicacionResponse.class));
 
-            UpdatePublicacionRequest req = new UpdatePublicacionRequest(
-                    "Nueva descripción", new BigDecimal("90000.00"), null
-            );
-            publicacionService.modificarPublicacion(5L, req, inmo);
+            publicacionService.modificarPublicacion(5L,
+                    new UpdatePublicacionRequest("Nueva descripción", new BigDecimal("90000.00"), null),
+                    inmo);
 
             assertEquals("Nueva descripción", pub.getDescripcion());
             assertEquals(new BigDecimal("90000.00"), pub.getPrecio());
         }
 
         @Test
-        @DisplayName("debería reducir la lista de imágenes si la nueva es más corta (orphanRemoval)")
-        void deberia_reducir_imagenes_si_lista_es_mas_corta() {
+        void reduce_imagenes_si_lista_es_mas_corta() {
             Usuario inmo = inmobiliaria(1L);
-            Publicacion pub = publicacionConDueno(5L, inmo, propiedadDisponible()); // 2 imágenes
+            Publicacion pub = publicacionConDueno(5L, inmo, propiedadDisponible());
 
             when(publicacionRepository.findById(5L)).thenReturn(Optional.of(pub));
             when(publicacionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
             when(publicacionMapper.toResponse(any(Publicacion.class), eq(false)))
                     .thenReturn(mock(PublicacionResponse.class));
 
-            UpdatePublicacionRequest req = new UpdatePublicacionRequest(
-                    "Desc", new BigDecimal("85000.00"), List.of("sola.jpg") // 1 imagen
-            );
-            publicacionService.modificarPublicacion(5L, req, inmo);
+            publicacionService.modificarPublicacion(5L,
+                    new UpdatePublicacionRequest("Desc", new BigDecimal("85000.00"), List.of("sola.jpg")),
+                    inmo);
 
             assertEquals(1, pub.getImagenes().size());
             assertEquals("sola.jpg", pub.getImagenes().get(0).getUrl());
         }
 
         @Test
-        @DisplayName("debería agregar imágenes si la nueva lista es más larga")
-        void deberia_agregar_imagenes_si_lista_es_mas_larga() {
+        void agrega_imagenes_si_lista_es_mas_larga() {
             Usuario inmo = inmobiliaria(1L);
-            Publicacion pub = publicacionConDueno(5L, inmo, propiedadDisponible()); // 2 imágenes
+            Publicacion pub = publicacionConDueno(5L, inmo, propiedadDisponible());
 
             when(publicacionRepository.findById(5L)).thenReturn(Optional.of(pub));
             when(publicacionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
             when(publicacionMapper.toResponse(any(Publicacion.class), eq(false)))
                     .thenReturn(mock(PublicacionResponse.class));
 
-            UpdatePublicacionRequest req = new UpdatePublicacionRequest(
-                    "Desc", new BigDecimal("85000.00"),
-                    List.of("a.jpg", "b.jpg", "c.jpg") // 3 imágenes
-            );
-            publicacionService.modificarPublicacion(5L, req, inmo);
+            publicacionService.modificarPublicacion(5L,
+                    new UpdatePublicacionRequest("Desc", new BigDecimal("85000.00"),
+                            List.of("a.jpg", "b.jpg", "c.jpg")),
+                    inmo);
 
             assertEquals(3, pub.getImagenes().size());
         }
 
         @Test
-        @DisplayName("debería lanzar ForbiddenException si el usuario no es el dueño")
-        void deberia_lanzar_excepcion_si_no_es_dueno() {
-            Usuario dueno = inmobiliaria(1L);
-            Usuario intruso = inmobiliaria(2L);
-            Publicacion pub = publicacionConDueno(5L, dueno, propiedadDisponible());
+        void lanza_forbidden_si_no_es_dueno() {
+            Publicacion pub = publicacionConDueno(5L, inmobiliaria(1L), propiedadDisponible());
 
             when(publicacionRepository.findById(5L)).thenReturn(Optional.of(pub));
 
             ForbiddenException ex = assertThrows(ForbiddenException.class,
                     () -> publicacionService.modificarPublicacion(5L,
                             new UpdatePublicacionRequest("Hack", BigDecimal.ONE, null),
-                            intruso));
+                            inmobiliaria(2L)));
 
             assertEquals("No tienes permiso sobre esta publicación", ex.getMessage());
             verify(publicacionRepository, never()).save(any());
         }
 
         @Test
-        @DisplayName("debería lanzar EntityNotFoundException si la publicación no existe")
-        void deberia_lanzar_excepcion_si_publicacion_no_existe() {
+        void lanza_notfound_si_publicacion_no_existe() {
             when(publicacionRepository.findById(99L)).thenReturn(Optional.empty());
 
             assertThrows(EntityNotFoundException.class,
@@ -278,11 +215,10 @@ class PublicacionServiceTest {
         }
 
         @Test
-        @DisplayName("no debería tocar imágenes si request.imagenes() es null")
-        void no_deberia_tocar_imagenes_si_imagenes_null() {
+        void no_toca_imagenes_si_request_null() {
             Usuario inmo = inmobiliaria(1L);
             Publicacion pub = publicacionConDueno(5L, inmo, propiedadDisponible());
-            List<Imagen> originales = new ArrayList<>(pub.getImagenes());
+            List<String> originales = pub.getImagenes().stream().map(i -> i.getUrl()).toList();
 
             when(publicacionRepository.findById(5L)).thenReturn(Optional.of(pub));
             when(publicacionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -294,19 +230,16 @@ class PublicacionServiceTest {
                     inmo);
 
             assertEquals(originales.size(), pub.getImagenes().size());
-            assertEquals(originales.get(0).getUrl(), pub.getImagenes().get(0).getUrl());
+            assertEquals(originales, pub.getImagenes().stream().map(i -> i.getUrl()).toList());
         }
     }
-
-    // ─── eliminarPublicacion ──────────────────────────────────────────────────
 
     @Nested
     @DisplayName("eliminarPublicacion")
     class EliminarPublicacion {
 
         @Test
-        @DisplayName("debería llamar a delete() cuando el usuario es el dueño")
-        void deberia_llamar_delete_si_es_dueno() {
+        void llama_delete_si_es_dueno() {
             Usuario inmo = inmobiliaria(1L);
             Publicacion pub = publicacionConDueno(5L, inmo, propiedadDisponible());
 
@@ -318,23 +251,19 @@ class PublicacionServiceTest {
         }
 
         @Test
-        @DisplayName("debería lanzar ForbiddenException y no borrar si el usuario no es dueño")
-        void deberia_lanzar_excepcion_y_no_borrar_si_no_es_dueno() {
-            Usuario dueno = inmobiliaria(1L);
-            Usuario intruso = inmobiliaria(2L);
-            Publicacion pub = publicacionConDueno(5L, dueno, propiedadDisponible());
+        void lanza_forbidden_y_no_borra_si_no_es_dueno() {
+            Publicacion pub = publicacionConDueno(5L, inmobiliaria(1L), propiedadDisponible());
 
             when(publicacionRepository.findById(5L)).thenReturn(Optional.of(pub));
 
             assertThrows(ForbiddenException.class,
-                    () -> publicacionService.eliminarPublicacion(5L, intruso));
+                    () -> publicacionService.eliminarPublicacion(5L, inmobiliaria(2L)));
 
             verify(publicacionRepository, never()).delete(any());
         }
 
         @Test
-        @DisplayName("debería lanzar EntityNotFoundException si la publicación no existe")
-        void deberia_lanzar_excepcion_si_publicacion_no_existe() {
+        void lanza_notfound_si_publicacion_no_existe() {
             when(publicacionRepository.findById(99L)).thenReturn(Optional.empty());
 
             assertThrows(EntityNotFoundException.class,
@@ -342,15 +271,12 @@ class PublicacionServiceTest {
         }
     }
 
-    // ─── buscarPorId ──────────────────────────────────────────────────────────
-
     @Nested
     @DisplayName("buscarPorId")
     class BuscarPorId {
 
         @Test
-        @DisplayName("debería consultar si es favorito para el usuario autenticado")
-        void deberia_consultar_si_es_favorito() {
+        void consulta_si_es_favorito() {
             Usuario usuario = inmobiliaria(1L);
             Publicacion pub = publicacionConDueno(5L, usuario, propiedadDisponible());
 
@@ -365,8 +291,7 @@ class PublicacionServiceTest {
         }
 
         @Test
-        @DisplayName("debería mapear con esFavorito=false cuando no está en favoritos")
-        void deberia_mapear_con_esFavorito_false() {
+        void mapea_con_esFavorito_false() {
             Usuario usuario = inmobiliaria(1L);
             Publicacion pub = publicacionConDueno(5L, usuario, propiedadDisponible());
 
@@ -380,8 +305,7 @@ class PublicacionServiceTest {
         }
 
         @Test
-        @DisplayName("debería lanzar EntityNotFoundException si no existe")
-        void deberia_lanzar_excepcion_si_no_existe() {
+        void lanza_notfound_si_no_existe() {
             when(publicacionRepository.findById(99L)).thenReturn(Optional.empty());
 
             assertThrows(EntityNotFoundException.class,
@@ -389,15 +313,12 @@ class PublicacionServiceTest {
         }
     }
 
-    // ─── listarPublicaciones (inmobiliaria) ───────────────────────────────────
-
     @Nested
     @DisplayName("listarPublicaciones")
     class ListarPublicaciones {
 
         @Test
-        @DisplayName("debería pedir al repo las publicaciones de la inmobiliaria y mapear sin metadata")
-        void deberia_listar_y_mapear_sin_metadata() {
+        void lista_y_mapea_sin_metadata() {
             Usuario inmo = inmobiliaria(7L);
             Publicacion p1 = publicacionConDueno(1L, inmo, propiedadDisponible());
             Publicacion p2 = publicacionConDueno(2L, inmo, propiedadDisponible());
@@ -420,8 +341,7 @@ class PublicacionServiceTest {
         }
 
         @Test
-        @DisplayName("si no hay publicaciones debería devolver lista vacía")
-        void si_no_hay_publicaciones_devuelve_vacio() {
+        void devuelve_lista_vacia_si_no_hay_publicaciones() {
             Usuario inmo = inmobiliaria(7L);
             when(publicacionRepository.search(
                     isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), eq(7L)
@@ -435,23 +355,19 @@ class PublicacionServiceTest {
         }
     }
 
-    // ─── buscarPublicaciones (usuarios) ───────────────────────────────────────
-
     @Nested
     @DisplayName("buscarPublicaciones")
     class BuscarPublicaciones {
 
         @Test
-        @DisplayName("si el repositorio devuelve vacío no debería consultar favoritos")
-        void si_repo_vacio_no_consulta_favoritos() {
+        void no_consulta_favoritos_si_repo_vacio() {
             Usuario usuario = inmobiliaria(1L);
             when(publicacionRepository.search(
                     isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull()
             )).thenReturn(List.of());
 
             List<PublicacionResponse> res = publicacionService.buscarPublicaciones(
-                    new PublicacionSearchParams(null, null, null, null, null, null, null, null, null),
-                    usuario
+                    emptySearch(), usuario
             );
 
             assertTrue(res.isEmpty());
@@ -459,8 +375,7 @@ class PublicacionServiceTest {
         }
 
         @Test
-        @DisplayName("debería mapear esFavorito por publicación")
-        void deberia_mapear_esFavorito_por_publicacion() {
+        void mapea_esFavorito_por_publicacion() {
             Usuario usuario = inmobiliaria(1L);
             Publicacion p1 = publicacionConDueno(10L, usuario, propiedadDisponible());
             Publicacion p2 = publicacionConDueno(11L, usuario, propiedadDisponible());
@@ -478,8 +393,7 @@ class PublicacionServiceTest {
             when(publicacionMapper.toResponse(p2, true)).thenReturn(r2);
 
             List<PublicacionResponse> res = publicacionService.buscarPublicaciones(
-                    new PublicacionSearchParams(null, null, null, null, null, null, null, null, null),
-                    usuario
+                    emptySearch(), usuario
             );
 
             assertEquals(2, res.size());
@@ -488,17 +402,14 @@ class PublicacionServiceTest {
         }
 
         @Test
-        @DisplayName("cuando hay característicaIds debería usar matchAll con ids distinct")
-        void cuando_hay_caracteristicas_usa_matchAll_distinct() {
+        void usa_matchAll_con_ids_distinct_cuando_hay_caracteristicas() {
             Usuario usuario = inmobiliaria(1L);
             Publicacion p = publicacionConDueno(10L, usuario, propiedadDisponible());
 
-            List<Long> caracsConDuplicados = List.of(1L, 2L, 1L);
             PublicacionSearchParams params = new PublicacionSearchParams(
-                    null, null, null, null, null, null, null, null, caracsConDuplicados
+                    null, null, null, null, null, null, null, null, List.of(1L, 2L, 1L)
             );
 
-            // We only care about which repository method is used and the distinct list size.
             when(publicacionRepository.searchMatchAllCaracteristicas(
                     isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(),
                     isNull(), eq(List.of(1L, 2L)), eq(2L)
@@ -507,7 +418,7 @@ class PublicacionServiceTest {
             when(usuarioRepository.findFavoritoIdsIn(eq(1L), eq(List.of(10L))))
                     .thenReturn(Set.of());
 
-            lenient().when(publicacionMapper.toResponse(any(Publicacion.class), anyBoolean()))
+            when(publicacionMapper.toResponse(any(Publicacion.class), anyBoolean()))
                     .thenReturn(mock(PublicacionResponse.class));
 
             publicacionService.buscarPublicaciones(params, usuario);
@@ -517,6 +428,10 @@ class PublicacionServiceTest {
                     isNull(), isNull(), isNull(), isNull(), isNull(), isNull(), isNull(),
                     isNull(), eq(List.of(1L, 2L)), eq(2L)
             );
+        }
+
+        private PublicacionSearchParams emptySearch() {
+            return new PublicacionSearchParams(null, null, null, null, null, null, null, null, null);
         }
     }
 }

@@ -35,7 +35,6 @@ class CaracteristicaServiceTest {
     class Crear {
 
         @Test
-        @DisplayName("normaliza trim + upper y persiste")
         void normaliza_y_persiste() {
             when(caracteristicaRepository.save(any())).thenAnswer(inv -> {
                 Caracteristica c = inv.getArgument(0);
@@ -53,8 +52,7 @@ class CaracteristicaServiceTest {
         }
 
         @Test
-        @DisplayName("lanza NullPointerException si nombre es null")
-        void null_nombre_lanza() {
+        void lanza_npe_si_nombre_null() {
             assertThrows(NullPointerException.class, () -> caracteristicaService.crear(null));
             verifyNoInteractions(caracteristicaRepository);
         }
@@ -65,8 +63,7 @@ class CaracteristicaServiceTest {
     class Listar {
 
         @Test
-        @DisplayName("consulta al repositorio ordenando por nombre ASC")
-        void consulta_ordenada() {
+        void consulta_ordenada_por_nombre_asc() {
             when(caracteristicaRepository.findAll(Sort.by(Sort.Direction.ASC, "nombre")))
                     .thenReturn(List.of());
 
@@ -77,7 +74,6 @@ class CaracteristicaServiceTest {
         }
 
         @Test
-        @DisplayName("mapea id y nombre")
         void mapea_id_y_nombre() {
             when(caracteristicaRepository.findAll(any(Sort.class)))
                     .thenReturn(List.of(

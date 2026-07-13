@@ -1,13 +1,12 @@
 package com.practicasDeDesarrollo.backend.unit.service;
 
 import com.practicasDeDesarrollo.backend.dto.response.CompraResponse;
+import com.practicasDeDesarrollo.backend.dto.response.PublicacionResponse;
 import com.practicasDeDesarrollo.backend.dto.response.UsuarioResponse;
 import com.practicasDeDesarrollo.backend.entity.Compra;
 import com.practicasDeDesarrollo.backend.entity.Propiedad;
 import com.practicasDeDesarrollo.backend.entity.Publicacion;
 import com.practicasDeDesarrollo.backend.entity.Usuario;
-import com.practicasDeDesarrollo.backend.entity.enums.RolUsuario;
-import com.practicasDeDesarrollo.backend.entity.enums.TipoPropiedad;
 import com.practicasDeDesarrollo.backend.exception.ConflictException;
 import com.practicasDeDesarrollo.backend.mapper.PublicacionMapper;
 import com.practicasDeDesarrollo.backend.mapper.UsuarioMapper;
@@ -30,8 +29,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
+import static com.practicasDeDesarrollo.backend.unit.support.TestFixtures.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -54,47 +53,18 @@ class CompraServiceTest {
     @InjectMocks
     private CompraService compraService;
 
-    private Usuario comprador(Long id) {
-        return Usuario.builder()
+    private Compra compra(Long id, Usuario comp, Publicacion pub) {
+        return Compra.builder()
                 .id(id)
-                .nombre("Comprador " + id)
-                .email("comprador" + id + "@test.com")
-                .password("pass")
-                .rol(RolUsuario.COMPRADOR)
+                .precioCompra(new BigDecimal("85000.00"))
+                .creadoEn(LocalDateTime.now())
+                .comprador(comp)
+                .publicacion(pub)
                 .build();
     }
 
-    private Usuario inmobiliaria(Long id) {
-        return Usuario.builder()
-                .id(id)
-                .nombre("Inmo " + id)
-                .email("inmo" + id + "@test.com")
-                .password("pass")
-                .rol(RolUsuario.INMOBILIARIA)
-                .build();
-    }
-
-    private Propiedad propiedad(boolean vendida) {
-        return Propiedad.builder()
-                .id(10L)
-                .tipo(TipoPropiedad.DEPTO)
-                .ubicacion("AV. MITRE 123")
-                .piso("4").depto("A")
-                .superficie(50).ambientes(2).sanitarios(1).expensas(15000)
-                .vendida(vendida)
-                .caracteristicas(Set.of())
-                .build();
-    }
-
-    private Publicacion publicacion(Long id, Usuario inmo, Propiedad prop) {
-        return Publicacion.builder()
-                .id(id)
-                .descripcion("Depto amplio")
-                .precio(new BigDecimal("85000.00"))
-                .inmobiliaria(inmo)
-                .propiedad(prop)
-                .imagenes(List.of())
-                .build();
+    private UsuarioResponse compradorResponse() {
+        return new UsuarioResponse(1L, "Comprador 1", "comprador1@test.com", null);
     }
 
     @Nested
@@ -102,10 +72,9 @@ class CompraServiceTest {
     class Comprar {
 
         @Test
-        @DisplayName("persiste la compra, marca vendida y guarda la publicación")
         void persiste_compra_y_marca_vendida() {
             Usuario compradorUsuario = comprador(1L);
-            Propiedad prop = propiedad(false);
+            Propiedad prop = propiedadDisponible();
             Publicacion pub = publicacion(5L, inmobiliaria(2L), prop);
 
             when(publicacionRepository.findById(5L)).thenReturn(Optional.of(pub));
@@ -124,10 +93,8 @@ class CompraServiceTest {
         }
 
         @Test
-        @DisplayName("lanza ConflictException si ya está vendida y no persiste nada")
-        void vendida_lanza_conflict() {
-            Propiedad prop = propiedad(true);
-            Publicacion pub = publicacion(5L, inmobiliaria(2L), prop);
+        void lanza_conflict_si_ya_vendida() {
+            Publicacion pub = publicacion(5L, inmobiliaria(2L), propiedadVendida());
             when(publicacionRepository.findById(5L)).thenReturn(Optional.of(pub));
 
             ConflictException ex = assertThrows(ConflictException.class,
@@ -139,8 +106,7 @@ class CompraServiceTest {
         }
 
         @Test
-        @DisplayName("lanza EntityNotFoundException si la publicación no existe")
-        void publicacion_no_existe_lanza() {
+        void lanza_notfound_si_publicacion_no_existe() {
             when(publicacionRepository.findById(99L)).thenReturn(Optional.empty());
 
             EntityNotFoundException ex = assertThrows(EntityNotFoundException.class,
@@ -156,24 +122,15 @@ class CompraServiceTest {
     class ObtenerVentas {
 
         @Test
-        @DisplayName("mapea compras de la inmobiliaria")
-        void mapea_ventas() {
+        void mapea_ventas_de_inmobiliaria() {
             Usuario inmo = inmobiliaria(2L);
             Usuario comp = comprador(1L);
-            Publicacion pub = publicacion(5L, inmo, propiedad(true));
+            Publicacion pub = publicacion(5L, inmo, propiedadVendida());
+            Compra c = compra(100L, comp, pub);
 
-            Compra compra = Compra.builder()
-                    .id(100L)
-                    .precioCompra(new BigDecimal("85000.00"))
-                    .creadoEn(LocalDateTime.now())
-                    .comprador(comp)
-                    .publicacion(pub)
-                    .build();
-
-            when(compraRepository.findByPublicacionInmobiliaria(inmo)).thenReturn(List.of(compra));
-            UsuarioResponse compradorResp = new UsuarioResponse(1L, "Comprador 1", "comprador1@test.com", null);
-            when(usuarioMapper.toResponse(comp)).thenReturn(compradorResp);
-            when(publicacionMapper.toResponse(pub)).thenReturn(mock(com.practicasDeDesarrollo.backend.dto.response.PublicacionResponse.class));
+            when(compraRepository.findByPublicacionInmobiliaria(inmo)).thenReturn(List.of(c));
+            when(usuarioMapper.toResponse(comp)).thenReturn(compradorResponse());
+            when(publicacionMapper.toResponse(pub)).thenReturn(mock(PublicacionResponse.class));
 
             List<CompraResponse> res = compraService.obtenerVentas(inmo);
 
@@ -189,20 +146,15 @@ class CompraServiceTest {
     class ObtenerClientes {
 
         @Test
-        @DisplayName("devuelve compradores únicos")
-        void devuelve_unicos() {
+        void devuelve_compradores_unicos() {
             Usuario inmo = inmobiliaria(2L);
             Usuario comp = comprador(1L);
+            Publicacion pub1 = publicacion(5L, inmo, propiedadVendida());
+            Publicacion pub2 = publicacion(6L, inmo, propiedadVendida());
 
-            Publicacion pub1 = publicacion(5L, inmo, propiedad(true));
-            Publicacion pub2 = publicacion(6L, inmo, propiedad(true));
-
-            Compra compra1 = Compra.builder().id(100L).comprador(comp).publicacion(pub1).build();
-            Compra compra2 = Compra.builder().id(101L).comprador(comp).publicacion(pub2).build();
-
-            when(compraRepository.findByPublicacionInmobiliaria(inmo)).thenReturn(List.of(compra1, compra2));
-            UsuarioResponse compResp = new UsuarioResponse(1L, "Comprador 1", "comprador1@test.com", null);
-            when(usuarioMapper.toResponse(comp)).thenReturn(compResp);
+            when(compraRepository.findByPublicacionInmobiliaria(inmo))
+                    .thenReturn(List.of(compra(100L, comp, pub1), compra(101L, comp, pub2)));
+            when(usuarioMapper.toResponse(comp)).thenReturn(compradorResponse());
 
             List<UsuarioResponse> res = compraService.obtenerClientes(inmo);
 
@@ -215,23 +167,15 @@ class CompraServiceTest {
     class ObtenerCompras {
 
         @Test
-        @DisplayName("mapea compras del comprador")
-        void mapea_compras() {
+        void mapea_compras_del_comprador() {
             Usuario comp = comprador(1L);
             Usuario inmo = inmobiliaria(2L);
-            Publicacion pub = publicacion(5L, inmo, propiedad(true));
+            Publicacion pub = publicacion(5L, inmo, propiedadVendida());
+            Compra c = compra(100L, comp, pub);
 
-            Compra compra = Compra.builder()
-                    .id(100L)
-                    .precioCompra(new BigDecimal("85000.00"))
-                    .creadoEn(LocalDateTime.now())
-                    .comprador(comp)
-                    .publicacion(pub)
-                    .build();
-
-            when(compraRepository.findByComprador(comp)).thenReturn(List.of(compra));
-            when(usuarioMapper.toResponse(comp)).thenReturn(new UsuarioResponse(1L, "Comprador 1", "comprador1@test.com", null));
-            when(publicacionMapper.toResponse(pub)).thenReturn(mock(com.practicasDeDesarrollo.backend.dto.response.PublicacionResponse.class));
+            when(compraRepository.findByComprador(comp)).thenReturn(List.of(c));
+            when(usuarioMapper.toResponse(comp)).thenReturn(compradorResponse());
+            when(publicacionMapper.toResponse(pub)).thenReturn(mock(PublicacionResponse.class));
 
             List<CompraResponse> res = compraService.obtenerCompras(comp);
 

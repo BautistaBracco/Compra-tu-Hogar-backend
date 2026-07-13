@@ -44,8 +44,7 @@ class UsuarioServiceTest {
     private UsuarioService usuarioService;
 
     @Test
-    @DisplayName("createUsuario: lanza ConflictException si el email ya existe")
-    void createUsuario_email_duplicado_lanza_conflict() {
+    void createUsuario_lanza_conflict_si_email_duplicado() {
         when(usuarioRepository.existsByEmail("dup@test.com")).thenReturn(true);
 
         ConflictException ex = assertThrows(ConflictException.class,
@@ -60,7 +59,6 @@ class UsuarioServiceTest {
     }
 
     @Test
-    @DisplayName("createUsuario: hashea password, persiste y genera token")
     void createUsuario_hashea_persiste_y_genera_token() {
         when(usuarioRepository.existsByEmail("a@test.com")).thenReturn(false);
         when(passwordEncoder.encode("plain")).thenReturn("hashed");
@@ -88,7 +86,6 @@ class UsuarioServiceTest {
     }
 
     @Test
-    @DisplayName("login: autentica y genera token")
     void login_autentica_y_genera_token() {
         Usuario u = Usuario.builder().id(7L).nombre("U").email("u@test.com").rol(RolUsuario.COMPRADOR).build();
         when(usuarioRepository.findByEmail("u@test.com")).thenReturn(Optional.of(u));
@@ -103,8 +100,7 @@ class UsuarioServiceTest {
     }
 
     @Test
-    @DisplayName("login: si no existe el usuario lanza UsernameNotFoundException")
-    void login_usuario_no_encontrado_lanza() {
+    void login_lanza_notfound_si_usuario_no_existe() {
         when(usuarioRepository.findByEmail(anyString())).thenReturn(Optional.empty());
 
         UsernameNotFoundException ex = assertThrows(UsernameNotFoundException.class,

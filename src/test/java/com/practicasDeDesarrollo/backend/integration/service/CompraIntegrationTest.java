@@ -2,6 +2,8 @@ package com.practicasDeDesarrollo.backend.integration.service;
 
 import com.practicasDeDesarrollo.backend.dto.request.CreatePropiedadRequest;
 import com.practicasDeDesarrollo.backend.dto.request.CreatePublicacionRequest;
+import com.practicasDeDesarrollo.backend.dto.request.CreateUsuarioRequest;
+import com.practicasDeDesarrollo.backend.dto.response.AuthResponse;
 import com.practicasDeDesarrollo.backend.dto.response.PublicacionResponse;
 import com.practicasDeDesarrollo.backend.entity.Usuario;
 import com.practicasDeDesarrollo.backend.entity.enums.RolUsuario;
@@ -44,32 +46,12 @@ class CompraIntegrationTest {
     private CompraRepository compraRepository;
 
     private Usuario comprador;
-    private Usuario inmobiliaria;
     private Long publicacionId;
 
     @BeforeEach
     void setUp() {
-        var authComprador = usuarioService.createUsuario(
-                new com.practicasDeDesarrollo.backend.dto.request.CreateUsuarioRequest(
-                        "Comprador",
-                        "comprador_compra@test.com",
-                        "123456",
-                        null
-                ),
-                RolUsuario.COMPRADOR
-        );
-        comprador = Usuario.builder().id(authComprador.id()).nombre(authComprador.nombre()).build();
-
-        var authInmo = usuarioService.createUsuario(
-                new com.practicasDeDesarrollo.backend.dto.request.CreateUsuarioRequest(
-                        "Inmo",
-                        "inmo_compra@test.com",
-                        "123456",
-                        null
-                ),
-                RolUsuario.INMOBILIARIA
-        );
-        inmobiliaria = Usuario.builder().id(authInmo.id()).nombre(authInmo.nombre()).build();
+        comprador = crearUsuario("Comprador", "comprador_compra@test.com", RolUsuario.COMPRADOR);
+        Usuario inmo = crearUsuario("Inmo", "inmo_compra@test.com", RolUsuario.INMOBILIARIA);
 
         CreatePropiedadRequest propReq = new CreatePropiedadRequest(
                 TipoPropiedad.DEPTO, "Calle Compra 1", "1", "A", 40, 2, 1, 0, Set.of()
@@ -80,17 +62,21 @@ class CompraIntegrationTest {
                 List.of("http://img/1.jpg"),
                 propReq
         );
-        PublicacionResponse creada = publicacionService.createPublicacion(pubReq, inmobiliaria);
-        publicacionId = creada.id();
-        assertNotNull(publicacionId);
+        publicacionId = publicacionService.createPublicacion(pubReq, inmo).id();
+    }
+
+    private Usuario crearUsuario(String nombre, String email, RolUsuario rol) {
+        AuthResponse auth = usuarioService.createUsuario(
+                new CreateUsuarioRequest(nombre, email, "123456", null),
+                rol
+        );
+        return Usuario.builder().id(auth.id()).nombre(auth.nombre()).build();
     }
 
     @Test
-    @DisplayName("comprar: persiste Compra, marca propiedad vendida, y segunda compra falla")
     void comprar_persiste_y_marca_vendida() {
         compraService.comprar(publicacionId, comprador);
 
-        // Compra persisted and linked uniquely by publicacion_id.
         assertEquals(1, compraRepository.count());
 
         var pub = publicacionRepository.findById(publicacionId).orElseThrow();
