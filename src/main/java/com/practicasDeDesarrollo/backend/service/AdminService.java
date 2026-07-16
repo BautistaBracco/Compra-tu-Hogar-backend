@@ -23,7 +23,7 @@ public class AdminService {
     private final PropiedadMapper propiedadMapper;
 
     public List<TopUserResponse> getTopUsuarios() {
-        return compraRepository.findTop5UsuariosPorCompra(PageRequest.of(0, 5))
+        return compraRepository.findTop5UsuariosPorCompra()
                 .stream()
                 .map(projection -> new TopUserResponse(
                         usuarioMapper.toResponse(projection.getUsuario()),
@@ -43,7 +43,7 @@ public class AdminService {
     }
 
     public List<TopAgencyResponse> getTopInmobiliarias() {
-        return compraRepository.findTop5InmobiliariasPorVenta(PageRequest.of(0, 5))
+        return compraRepository.findTop5InmobiliariasPorVenta()
                 .stream()
                 .map(projection -> new TopAgencyResponse(
                         usuarioMapper.toResponse(projection.getAgencia()),

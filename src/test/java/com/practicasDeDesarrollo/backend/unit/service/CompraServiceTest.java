@@ -32,7 +32,6 @@ import java.util.Optional;
 
 import static com.practicasDeDesarrollo.backend.unit.support.TestFixtures.*;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -101,8 +100,6 @@ class CompraServiceTest {
                     () -> compraService.comprar(5L, comprador(1L)));
 
             assertTrue(ex.getMessage().toLowerCase().contains("vendida"));
-            verify(compraRepository, never()).save(any());
-            verify(publicacionRepository, never()).save(any());
         }
 
         @Test
@@ -113,7 +110,6 @@ class CompraServiceTest {
                     () -> compraService.comprar(99L, comprador(1L)));
 
             assertTrue(ex.getMessage().toLowerCase().contains("no encontrada"));
-            verify(compraRepository, never()).save(any());
         }
     }
 

@@ -101,6 +101,17 @@ Para ver los logs del backend en tiempo real:
 docker compose logs -f backend
 ```
 
+### Credenciales Iniciales
+
+Al iniciar la aplicación se crean automáticamente los siguientes usuarios (solo cuando el perfil `test` no está activo). El login se realiza vía `POST /auth/login`.
+
+| Email | Password | Rol |
+|---|---|---|
+| `juan@gmail.com` | `12345678` | ADMIN |
+| `nestor@gmail.com` | `12345678` | COMPRADOR |
+| `InmobiliariaAlfonso@gmail.com` | `12345678` | INMOBILIARIA |
+| `CostaInmuebles@gmail.com` | `12345678` | INMOBILIARIA |
+
 ---
 
 ## 💻 Frontend (Entorno de Desarrollo)
