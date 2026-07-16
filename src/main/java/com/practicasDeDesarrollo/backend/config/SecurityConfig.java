@@ -3,7 +3,6 @@ package com.practicasDeDesarrollo.backend.config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -40,12 +39,10 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/health", "/auth/**", "/error", "/actuator/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/publicaciones/**", "/propiedades/**").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/inmobiliaria/**").hasRole("INMOBILIARIA")
                         .requestMatchers("/comprador/**").hasRole("COMPRADOR")
                         .requestMatchers("/usuarios/**").hasAnyRole("ADMIN", "COMPRADOR", "INMOBILIARIA")
-                        .requestMatchers("/compras/**", "/resenas/**").authenticated()
                         .requestMatchers("/uploads/**").permitAll()
                         .anyRequest().authenticated()
                 )
